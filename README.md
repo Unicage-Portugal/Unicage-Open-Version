@@ -1,4 +1,4 @@
-# Unicage-Open-Version
+# Unicage Open Version
 Unicage is a set of highly efficient commands that allow the user to build robust, yet flexible systems in a modular way through data processing pipelines. Unicage follows the Unix philosophy, a set of concepts and guidelines that focus on designing small but highly efficient programs and operating systems.
 
 Unicage Open Version is a set of 85 Unicage commands that are freely distributed and that can be easily installed on any machine with a Linux environment. Contrarily to the ones distributed through Unicage Enterprise Version, these commands are written in Python, therefore, they are not able to achieve the same performance levels as the ones from the Unicage Enterprise Version, and they might present certain limitations in terms of execution. 
