@@ -1,0 +1,87 @@
+Tukubai online command manual
+
+check_cmp_name
+
+【name】
+
+check_cmp_name : Compares data in name format
+
+[Format]
+
+Usage : check_cmp_name <expression> <name_file>
+Option : --through <string>
+Version : Tue Oct 19 23:46:03 JST 2021
+Edition: 1
+
+【explanation】
+
+Compares tag vs. tag or tag vs. value in <name_file> according
+to <expression>.
+
+If there are errors, the command reports all tag names which fails
+<expression> and exit with the error status.
+
+<expression> is specified as 'operand1 operator operand2'. operand1
+and operand2 can be tag names or values. The operator can be any of
+the following 6 operators.
+
+    -EQ -eq  <--  =  (equal)
+    -NE -ne  <-- !=  (not equal)
+    -GE -ge  <-- >=  (greater or equal)
+    -GT -gt  <--  >  (greater)
+    -LE -le  <-- <=  (less or equal)
+    -LT -lt  <--  <  (less)
+
+【option】
+
+--through <string>
+If the value defined in the <name_file> matches <string>, then no
+check is performed.  The default value for <string> is '_'. You can
+specify this option multiple times to specify multiple <string>s.
+
+[Example 1]
+
+$ cat data
+A 200
+B 300
+C _
+D_001 3
+D_002 2
+D_003 1
+E_001 1
+E_002 2
+E_003 3
+
+(Compare Tag to Tag)
+$ check_cmp_name 'A -le B' data
+$ echo $?
+0
+$ check_cmp_name 'A -eq B' data
+A
+B
+$ echo $?
+1
+
+(Compare tag to value)
+$ check_cmp_name 'A -gt 300' data
+A
+$ echo $?
+1
+
+(Do not check if '_')
+$ check_cmp_name 'C -ne 0' data
+$ echo $?
+0
+
+(Can check multiple records)
+$ check_cmp_name 'D -le E' data
+D_001
+E_001
+1
+$ echo $?
+1
+
+
+last modified: Thu Aug 4 05:16:09 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

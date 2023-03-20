@@ -1,0 +1,390 @@
+#!/usr/bin/env python
+#coding: utf-8
+#
+# unmap 逆マップ（Open usp Tukubai版）
+# 
+# designed by Nobuaki Tounaka
+# written  by Masatomo Togashi
+#
+# The MIT License
+#
+# Copyright (C) 2020 Universal Shell Programming Laboratory
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+from __future__ import print_function
+
+_usage = "unmap       num=<n>x<m> <file>"
+_usage1 = "unmap +yarr num=<n>x<m> <file>"
+_usage2 = "unmap +arr  num=<n>x<m> <file>"
+_version = "Fri Nov 20 17:00:13 JST 2020"
+_code = "Open usp Tukubai (LINUX+FREEBSD/PYTHON2.4/UTF-8)"
+_numpat = r'(\d+)(x\d+)?$'
+		# 1: num_x
+		# 2: 'x' + num_y
+
+import re
+import os
+import sys
+import stat
+import unicodedata
+
+# 濁音と半濁音のNFD表記でNFC表記もできるもの→NFDtoNFC変換でNFCに統一する
+_comb_pat=r"(((う|か|き|く|け|こ|さ|し|す|せ|そ|た|ち|つ|て|と|は|ひ|ふ|へ|ほ|ウ|カ|キ|ク|ケ|コ|サ|シ|ス|セ|ソ|タ|チ|ツ|テ|ト|ハ|ヒ|フ|ヘ|ホ|ワ|ヰ|ヱ|ヲ)゙)|((は|ひ|ふ|へ|ほ|ハ|ヒ|フ|ヘ|ホ)゚))+"
+
+def error(msg, *arg):
+	print('Error[unmap] :', msg % arg, file=sys.stderr)
+	sys.exit(1)
+
+def usage():
+	print("Usage   :", _usage, file=sys.stderr)
+	print("        :", _usage1, file=sys.stderr)
+	print("        :", _usage2, file=sys.stderr)
+	print("Version :", _version, file=sys.stderr)
+	print("         ", _code, file=sys.stderr)
+	sys.exit(1)
+
+class FieldLine:
+	def __init__(self, line, allow_z = False):
+		self.__allow_zero = allow_z
+		self.__fields = [ line ]
+		self.__fields += [ x for x in line.split(' ') if x ]
+
+	def size(self):
+		return len(self.__fields) - 1
+
+	def getField(self, s, e = None):
+		if e == None:
+			e = s
+		if s <= e:
+			return ' '.join(self.__fields[s : e + 1])
+		else:
+			t = self.__fields[e : s + 1]
+			t.reverse()
+			return ' '.join(t)
+
+	def getFieldList(self, s, e = None):
+		if e:
+			return self.__fields[s : e + 1]
+		else:
+			return self.__fields[s : ]
+
+#
+# 入力ファイルオープン
+#
+def open_file(n):
+	if n >= len(sys.argv):	filename = '-'
+	else:
+		filename = sys.argv[n]
+		del sys.argv[n]
+	if filename == '-':	filename = '/dev/fd/0'	# sys.stdinをファイルディスクリプターで表記する
+	if Python3():	mode='r'
+	else:	mode='rU'	# Python2ではmodeがrUのときPython3と同様に読み込み時に各種改行記号がLF（\n）に統一される
+	try:
+		file = open(filename, mode)
+	except:
+		if filename=='/dev/fd/0':
+			error("標準入力ファイルをオープンできません。")
+		else:
+			error("ファイル '%s' をオープンできません。", filename)
+	return file
+
+# 改行符号（\r\n）の削除関数
+def rm_eol(line):
+	return line.rstrip("\r\n")	# 改行記号としてCRLF('\r\n')/CR('\r')/LF('\n')のすべてに対応する
+
+# BOMの取得関数
+def get_BOM():
+	if Python3():	return chr(int("FEFF",16))	# U+FEFFはBOMのUnicode符号位置
+	else:			return "\xEF\xBB\xBF"	# BOMは「EF BB BF」の3バイト
+
+# BOMの削除関数
+def rm_BOM(line):
+	global firstline
+	if not firstline: return line
+	firstline=False
+	if line.startswith(get_BOM()):	line=line[len(get_BOM()):]	# 行頭にBOMがあったらBOMを削除する
+	return line
+
+# ファイル入力行の前処理
+def preproc_line(line):
+	line=rm_eol(line)	# 行末の改行記号を削除する
+	line=rm_BOM(line)	# ファイル先頭行の行頭にBOMがあったらこれを削除する
+	return line
+
+# Python3か判定する
+def Python3():
+	if sys.version_info >= (3, 0):
+		return True
+	else:
+		return False
+
+#
+# utf8 変換
+#
+def to_utf8(s):
+	try:
+		return s.encode('utf-8')
+	except:
+		error("内部エラー UTF8への変換に失敗しました。")
+
+#
+# unicode 変換
+#
+def to_unicode(s):
+	if Python3(): return s
+	try:
+		return unicode(s, 'utf_8')
+	except:
+		error("不当なマルチバイト文字が含まれています。")
+
+#
+# NFDtoNFC()のre.sub()から指定patternがみつかるごとに呼ばれるのでNFD/NFC変換をして返す
+# 置換対象パターンはNFD文字:全角ひらがな/全角カタカナの清音に結合用濁点/結合用半濁点を連接したもの
+# 置換先文字はNFC文字:全角ひらがな/全角カタカナの濁音/半濁音
+#
+def replace(matchobj):
+	if Python3():	return unicodedata.normalize('NFC',matchobj.group(0))
+	else:	return to_utf8(unicodedata.normalize('NFC',to_unicode(matchobj.group(0))))	# Python2ではutf8→unicdoe→utf8の変換をする
+
+#
+# 全角ひらがな/全角カタカナの濁音/半濁音のNFC化
+#
+def NFDtoNFC(str):
+	# 全角ひらがな/全角カタカナの濁音/半濁音をNFCで統一して返す
+	return re.sub(pattern,replace,str)
+
+#
+# 横キーの取得
+#
+def get_ykey(header, num_x):
+	#
+	# サブキーの有無の確認
+	#
+	l = header[0].size()
+	if l > num_x and header[0].getField(num_x + 1) == '*':
+		subkey = 1
+	else:
+		subkey = 0
+
+	#
+	# フィールド数の確認
+	#
+	for h in header:
+		if h.size() <= num_x + subkey:
+			error("フィールドが足りません。")
+		elif h.size() != l:
+			error("フィールド数が異なります。")
+		elif subkey and h.getField(num_x + subkey) != '*':
+			error("%d 行目のサブキーフィールドが * ではありません。", i)
+
+	#
+	# 横キーの取得
+	#
+	L, last_L = 0, 0
+	ykey = [ ' '.join([ h.getField(num_x + subkey + 1) for h in header ]) ]
+	for i in range(num_x + subkey + 1, l + 1):
+		yk = ' '.join([ h.getField(i) for h in header ])
+		if yk != ykey[-1]:
+			if L != last_L and last_L != 0:
+				error("横キーの個数が不均一です。")
+			last_L = L
+			L = 0
+			ykey += [ yk ]
+		L += 1
+
+	if L != last_L and last_L == 0:
+		error("横キーの個数が不均一です。")
+
+	return ykey, header[0].size(), L, subkey
+
+#
+# ブロックの読み込み
+#
+def read_block(file, first, line, num_x, subkey, nfld, nline):
+	if not line:
+		line = file.readline()
+		if not line:
+			return None
+		line = FieldLine(preproc_line(line))
+	tkey = line.getField(1, num_x)
+	tkey = NFDtoNFC(tkey)	# tkeyをNFC正規化する
+	block = []
+	nl = 0
+	while True:
+		if line.size() != nfld:
+			error("フィールド数が異なります。")
+		tk = line.getField(1, num_x)
+		tk = NFDtoNFC(tk)	# tkをNFC正規化する
+		if tk != tkey:
+			if not first and nl < nline:
+				error("同じ縦キーの行が足りません。")
+			return block, tkey, nl, line
+		block += [ line.getFieldList(num_x + subkey + 1) ]
+		nl += 1
+		if not first and nl > nline:
+			error("同じ縦キーの行が多過ぎます。")
+		line = file.readline()
+		if not line:
+			if not first and nl < nline:
+				error("行が足りません。")
+			return block, tkey, nl, line
+		line = FieldLine(preproc_line(line))
+
+#
+# ブロックの出力 (+yarr / +arr 有り)
+#
+def putblk_array(tkey, ykey, block, L, nline):
+	for (i, yk) in enumerate(ykey):
+		endchar=' '
+		print(tkey, yk, end=endchar) 
+		for j in range(nline):
+			endchar=' '
+			for k in range(L):
+				if k==L-1: endchar=''
+				print(block[j][L * i + k], end=endchar)
+		print()
+
+#
+# ブロックの出力 (+yarr / +arr 無し)
+#
+def putblk_normal(tkey, ykey, block, L, nline):
+	for (i, yk) in enumerate(ykey):
+		endchar=' '
+		print(tkey, yk, end=endchar) 
+		for j in range(L):
+			endchar=' '
+			for k in range(nline):
+				if k==nline-1: endchar=''
+				print(block[k][L * i + j], end=endchar)
+		print()
+
+#
+# unmap 処理 (+yarr / +arr 有り)
+#
+def do_unmap_array(file, num_x, subkey, nfld, L, ykey, line):
+	#
+	# read_block() --> block, tkey, nline, line
+	#
+	t = read_block(file, True, line, num_x, subkey, nfld, 0)
+	putblk_array(t[1], ykey, t[0], L, t[2])
+	while True:
+		t = read_block(file, False, t[3], num_x, subkey, nfld, t[2])
+		if not t:
+			return
+		putblk_array(t[1], ykey, t[0], L, t[2])
+
+#
+# unmap 処理 (+yarr / +arr 無し)
+#
+def do_unmap_normal(file, num_x, subkey, nfld, L, ykey, line):
+	#
+	# read_block() --> block, tkey, nline, line
+	#
+	t = read_block(file, True, line, num_x, subkey, nfld, 0)
+	putblk_normal(t[1], ykey, t[0], L, t[2])
+	while True:
+		t = read_block(file, False, t[3], num_x, subkey, nfld, t[2])
+		if not t:
+			return
+		putblk_normal(t[1], ykey, t[0], L, t[2])
+
+#
+# メイン関数
+#
+if __name__ == '__main__':
+
+	if len(sys.argv) <= 1 \
+	 or sys.argv[1] == '--help' \
+	 or sys.argv[1] == '--version':
+		usage()
+
+	#
+	# NFD文字（清音+結合用濁点/結合用半濁点）検出のための正規表現パターンを準備
+	#
+	pattern=re.compile(_comb_pat)
+
+	#
+	# +yarr
+	#
+	if sys.argv[1] == '+yarr' or sys.argv[1] == '+arr':
+		array = True
+		del sys.argv[1]
+		if len(sys.argv) <= 1:
+			usage()
+	else:
+		array = False
+
+	#
+	# num=<n>x<m>
+	#
+	r = re.match('num=' + _numpat, sys.argv[1])
+	if not r:
+		usage()
+	num_x = int(r.group(1))
+	if r.group(2):
+		num_y = int(r.group(2)[1:])
+	else:
+		num_y = 1
+	if num_x * num_y == 0:
+		usage()
+
+	#
+	# ファイルのオープン
+	#
+	file = open_file(2)
+
+	#
+	# ヘッダーの入力
+	#
+	header = []
+	firstline=True
+	for i in range(num_y):
+		line = file.readline()
+		if not line:
+			if i == 0:
+				sys.exit(0)
+			else:
+				error("ヘッダー行の途中でファイルが終了していま す。")
+		header += [ FieldLine(preproc_line(line)) ]
+
+	#
+	# 横キーの取得
+	#
+	ykey, nfld, L, subkey = get_ykey(header, num_x)
+
+	#
+	# サブキー行の確認
+	#
+	line = file.readline()
+	if not line:
+		sys.exit(0)
+	line = FieldLine(preproc_line(line))
+	if line.getField(1) == '*':
+		line = None
+
+	#
+	# 本体処理
+	#
+	if array:
+		do_unmap_array(file, num_x, subkey, nfld, L, ykey, line)
+	else:
+		do_unmap_normal(file, num_x, subkey, nfld, L, ykey, line)
+
+	sys.exit(0)

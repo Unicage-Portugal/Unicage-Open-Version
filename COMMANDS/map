@@ -1,0 +1,456 @@
+#!/usr/bin/env python
+#coding: utf-8
+#
+# map 縦ファイルを縦横ファイルに変換（Open usp Tukubai版）
+# 
+# designed by Nobuaki Tounaka
+# written  by Masatomo Togashi
+#
+# The MIT License
+#
+# Copyright (C) 2020 Universal Shell Programming Laboratory
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+from __future__ import print_function
+
+_usage = "map       [-<l>] num=<n>x<m> <file>"
+_usage1 = "map +yarr [-<l>] num=<n>x<m> <file>"
+_usage2 = "map +arr  [-<l>] num=<n>x<m> <file>"
+_option = "-m<c>"
+_option1 = "-n"
+_version = "Sat Sep 19 23:49:25 JST 2020"
+_code = "Open usp Tukubai (LINUX+FREEBSD/PYTHON2.4/UTF-8)"
+_keypat = r'\d+$'
+_numpat = r'(\d+)(x\d+)?$'
+		# 1: num_x
+		# 2: 'x' + num_y
+
+# 濁音と半濁音のNFD表記でNFC表記もできるもの→NFDtoNFC変換でNFCに統一する
+_comb_pat=r"(((う|か|き|く|け|こ|さ|し|す|せ|そ|た|ち|つ|て|と|は|ひ|ふ|へ|ほ|ウ|カ|キ|ク|ケ|コ|サ|シ|ス|セ|ソ|タ|チ|ツ|テ|ト|ハ|ヒ|フ|ヘ|ホ|ワ|ヰ|ヱ|ヲ)゙)|((は|ひ|ふ|へ|ほ|ハ|ヒ|フ|ヘ|ホ)゚))+"
+
+import re
+import os
+import sys
+import stat
+import tempfile
+import unicodedata
+
+def error(msg, *arg):
+	print('Error[map] :', msg % arg, file=sys.stderr)
+	sys.exit(1)
+
+def usage():
+	print("Usage   :", _usage, file=sys.stderr)
+	print("        :", _usage1, file=sys.stderr)
+	print("        :", _usage2, file=sys.stderr)
+	print("Option  :", _option, file=sys.stderr)
+	print("        :", _option1, file=sys.stderr)
+	print("Version :", _version, file=sys.stderr)
+	print("         ", _code, file=sys.stderr)
+	sys.exit(1)
+
+class FieldLine:
+	def __init__(self, line, allow_z = False):
+		self.__allow_zero = allow_z
+		self.__fields = [ line ]
+		self.__fields += [ x for x in line.split(' ') if x ]
+
+	def size(self):
+		return len(self.__fields) - 1
+
+	def getFieldNum(self, key):
+		if type(key) == type(0):
+			return key
+		if re.match(r'\d+$', key):
+			key = int(key)
+		elif key == 'NF':
+			key = self.size()
+		else:
+			key = self.size() - int(key[3:])
+			if key <= 0:
+				error("NF-x の x が大きすぎます。")
+		if key < 0:
+			error("フィールド番号が負です。")
+		if key == 0 and not self.__allow_zero:
+			error("フィールド番号が０です。")
+		if key > self.size():
+			error("フィールド番号が大きすぎます。")
+		return key
+
+	def getField(self, s, e = None):
+		s = self.getFieldNum(s)
+		if e == None:
+			e = s
+		else:
+			e = self.getFieldNum(e)
+		if s <= e:
+			return NFDtoNFC(' '.join(self.__fields[s : e + 1]))
+		else:
+			t = self.__fields[e : s + 1]
+			t.reverse()
+			return NFDtoNFC(' '.join(t))
+
+#
+# 入力ファイルオープン
+#
+def open_file(n):
+	if type(n) == type(0):
+		if n >= len(sys.argv):	n = '-'
+		else:	n = sys.argv[n]
+	original_file_name=n
+	if n == '-':	n = '/dev/fd/0'	# sys.stdinをファイルディスクリプターで表記する
+	if Python3():	mode='r'
+	else:	mode='rU'	# Python2ではmodeがrUのときPython3と同様に読み込み時に各種改行記号がLF（\n）に統一される
+	try:
+		file = open(n, mode)
+	except:
+		error("ファイル '%s' をオープンできません。", original_file_name)
+	return file
+
+# 改行符号（\r\n）の削除関数
+def rm_eol(line):
+	return line.rstrip("\r\n")	# 改行記号としてCRLF('\r\n')/CR('\r')/LF('\n')のすべてに対応する
+
+# BOMの取得関数
+def get_BOM():
+	if Python3():	return chr(int("FEFF",16))	# U+FEFFはBOMのUnicode符号位置
+	else:			return "\xEF\xBB\xBF"	# BOMは「EF BB BF」の3バイト
+
+# BOMの削除関数
+def rm_BOM(line):
+	global firstline
+	if not firstline: return line
+	firstline=False
+	if line.startswith(get_BOM()):	line=line[len(get_BOM()):]	# 行頭にBOMがあったらBOMを削除する
+	return line
+
+# ファイル入力行の前処理
+def preproc_line(line):
+	line=rm_eol(line)	# 行末の改行記号を削除する
+	line=rm_BOM(line)	# ファイル先頭行の行頭にBOMがあったらこれを削除する
+	return line
+
+# Python3か判定する
+def Python3():
+	if sys.version_info >= (3, 0):
+		return True
+	else:
+		return False
+
+#
+# unicode 変換
+#
+def to_unicode(s):
+	try:
+		return unicode(s, 'utf_8')
+	except:
+		error("不当なマルチバイト文字が含まれています。")
+
+#
+# utf8 変換
+#
+def to_utf8(s):
+	try:
+		return s.encode('utf-8')
+	except:
+		error("内部エラー UTF8への変換に失敗しました。")
+
+#
+# NFDtoNFC()のre.sub()から指定patternがみつかるごとに呼ばれるのでNFD/NFC変換をして返す
+# 置換対象パターンはNFD文字:全角ひらがな/全角カタカナの清音に結合用濁点/結合用半濁点を連接したもの
+# 置換先文字はNFC文字:全角ひらがな/全角カタカナの濁音/半濁音
+#
+def replace(matchobj):
+	if Python3():	return unicodedata.normalize('NFC',matchobj.group(0))
+	else:	return to_utf8(unicodedata.normalize('NFC',to_unicode(matchobj.group(0))))	# Python2ではutf8→unicdoe→utf8の変換をする
+
+#
+# 全角ひらがな/全角カタカナの濁音/半濁音のNFC化
+#
+def NFDtoNFC(str):
+	# 全角ひらがな/全角カタカナの濁音/半濁音をNFCで統一して返す
+	return re.sub(pattern,replace,str)
+
+#
+# 通常ファイルの判定
+#
+def isfile(fd):
+	try:
+		return stat.S_ISREG(os.fstat(fd).st_mode)
+	except:
+		return False
+
+#
+# サブキーの生成
+#
+def gensub(k, subkey):
+	if subkey == '0':
+		return str(k + 1)
+	else:
+		return chr(ord(subkey) + k)
+
+#
+# ヘッダーの出力
+#
+def puthead(key_y, num_x, num_y, a, subkey_x, subkey_y):
+	if subkey_x:
+		num_x += 1
+	for i in range(num_y):
+		print(' '.join([ '*' ] * num_x), end='')
+		for k in key_y:
+			print('',' '.join([ k.split(' ')[i] ] * a), end='')
+		print()
+	if subkey_y:
+		print(' '.join([ '*' ] * num_x), end='')
+		for j in range(len(key_y)):
+			for k in range(a):
+				print('',gensub(k, subkey_y), end='')
+		print()
+
+#
+# ブロックの出力
+#
+def putblk(table, key_y_len, a, b, subkey, oldkey):
+	if not table:
+		return
+	for i in range(a):
+		print(oldkey, end='')
+		if subkey:
+			print('',gensub(i, subkey), end='')
+		for j in range(b * key_y_len):
+			print('',table[i][j], end='')
+		print()
+
+#
+# map 処理 (+yarr / +arr 有り)
+#
+def do_map_array(file, key_y, num_x, num_y, numkey, nfld, L, pad, array):
+	#
+	# サブキーの確認
+	#
+	if numkey:
+		subkey_x, subkey_y = '0', '0'
+	else:
+		subkey_x, subkey_y = 'A', 'a'
+	if nfld // L == 1:
+		subkey_x = None
+	if L == 1 or array == 2:
+		subkey_y = None
+	if not numkey and (nfld // L > 26 or L > 26):
+		error("サブキーが足りません。-n オプションを指定してください。")
+
+	#
+	# ヘッダーの出力
+	#
+	puthead(key_y, num_x, num_y, L, subkey_x, subkey_y)
+
+	#
+	# メインループ
+	#
+	oldkey = None
+	table = None
+	for line in file:
+		line=preproc_line(line)	# 入力行の前処理
+		line = FieldLine(line)
+		if line.getField(1, num_x) != oldkey:
+			putblk(table, len(key_y), nfld // L, L, subkey_x, oldkey)
+			oldkey = line.getField(1, num_x)
+			l = L * len(key_y)
+			table = [ [ pad ] * l for i in range(nfld // L) ]
+		pos = key_y.index(line.getField(num_x + 1, num_x + num_y))
+		n = num_x + num_y + 1
+		for i in range(nfld // L):
+			for j in range(L):
+				table[i][L * pos + j] = line.getField(n)
+				n += 1
+	putblk(table, len(key_y), nfld // L, L, subkey_x, oldkey)
+
+#
+# map 処理 (+yarr / +arr 無し)
+#
+def do_map(file, key_y, num_x, num_y, numkey, nfld, L, pad):
+	#
+	# サブキーの確認
+	#
+	if numkey:
+		subkey_x, subkey_y = '0', '0'
+	else:
+		subkey_x, subkey_y = 'A', 'a'
+	if L == 1:
+		subkey_x = None
+	if nfld // L == 1:
+		subkey_y = None
+	if not numkey and (L > 26 or nfld // L > 26):
+		error("サブキーが足りません。-n オプションを指定してください。")
+
+	#
+	# ヘッダーの出力
+	#
+	puthead(key_y, num_x, num_y, nfld // L, subkey_x, subkey_y)
+
+	#
+	# メインループ
+	#
+	oldkey = None
+	table = None
+	for line in file:
+		line=preproc_line(line)	# 入力行の前処理
+		line = FieldLine(line)
+		if line.getField(1, num_x) != oldkey:
+			putblk(table, len(key_y), L, nfld // L, subkey_x, oldkey)
+			oldkey = line.getField(1, num_x)
+			l = (nfld // L) * len(key_y)
+			table = [ [ pad ] * l for i in range(L) ]
+		pos = key_y.index(line.getField(num_x + 1, num_x + num_y))
+		n = num_x + num_y + 1
+		for i in range(nfld // L):
+			for j in range(L):
+				table[j][nfld // L * pos + i] = line.getField(n)
+				n += 1
+	putblk(table, len(key_y), L, nfld // L, subkey_x, oldkey)
+
+#
+# メイン関数
+#
+if __name__ == '__main__':
+
+	if len(sys.argv) <= 1 \
+	 or sys.argv[1] == '--help' \
+	 or sys.argv[1] == '--version':
+		usage()
+
+	#
+	# NFD文字（清音+結合用濁点/結合用半濁点）検出のための正規表現パターンを準備
+	#
+	pattern=re.compile(_comb_pat)
+
+	#
+	# +yarr / +yarr
+	#
+	if sys.argv[1] == '+yarr' or sys.argv[1] == '+arr':
+		if sys.argv[1] == '+yarr':
+			array = 1
+		else:
+			array = 2
+		del sys.argv[1]
+		if len(sys.argv) <= 1:
+			usage()
+	else:
+		array = 0
+
+	#
+	# -m<c> / -n / -<n>
+	#
+	pad = '0'
+	numkey = False
+	L = None
+	while sys.argv[1][0] == '-':
+		if sys.argv[1][:2] == '-m':
+			if len(sys.argv[1]) > 2:
+				pad = sys.argv[1][2:]
+			elif len(sys.argv) <= 2:
+				error("-m オプションの引数がありません。")
+			else:
+				pad = sys.argv[2]
+				del sys.argv[1]
+		elif sys.argv[1] == '-n':
+			numkey = True
+		elif re.match('-' + _keypat, sys.argv[1]):
+			L = int(sys.argv[1][1:])
+		else:
+			break
+		del sys.argv[1]
+		if len(sys.argv) <= 1:
+			usage()
+
+	#
+	# num=<n>x<m>
+	#
+	r = re.match('num=' + _numpat, sys.argv[1])
+	if not r:
+		usage()
+	num_x = int(r.group(1))
+	if r.group(2):
+		num_y = int(r.group(2)[1:])
+	else:
+		num_y = 1
+	if num_x * num_y == 0:
+		usage()
+
+	#
+	# ファイルのオープン
+	#
+	file = open_file(2)	# 指定ファイルが省略または「-」ならstdinを返す
+	if not isfile(file.fileno()):
+		tmp = tempfile.mkstemp(prefix='map-')
+		os.unlink(tmp[1])
+		tmp = os.fdopen(tmp[0], 'w+')
+	else:
+		tmp = None
+
+	#
+	# 1st pass
+	#
+	nfld = 0
+	key_y = set([])
+	firstline=True
+	for line in file:
+		if tmp:
+			print(line, end='',file=tmp)	# 入力がstdinのときは一時ファイルに書き出す
+		line=preproc_line(line)	# 入力行の前処理
+		line = FieldLine(line)
+		if not nfld:
+			nfld = line.size()
+			if not nfld:
+				error("1行目が空です。")
+			if line.size() < num_x + num_y:
+				error("フィールドが足りません。")
+			elif line.size() <= num_x + num_y:
+				error("データフィールドがありません。")
+		if line.size() > nfld:
+			error("フィールドが多過ぎます。")
+		elif line.size() < nfld:
+			error("フィールドが足りません。")
+		key_y |= set([ line.getField(num_x + 1, num_x + num_y) ])
+	if not nfld:
+		sys.exit(0)
+	nfld -= num_x + num_y
+	key_y = list(key_y)
+	key_y.sort()
+	if not L:
+		L = nfld
+	elif nfld % L != 0:
+		error("フィールド数が -<l> オプションの倍数ではありません。")
+
+	if tmp:	# 一時ファイルを使用ならいったん閉じる
+		file.close()
+		file = tmp
+	file.seek(0)
+
+	#
+	# 2nd pass
+	#
+	firstline=True
+	if array:
+		do_map_array(file, key_y, num_x, num_y, numkey, nfld, L, pad, array)
+	else:
+		do_map(file, key_y, num_x, num_y, numkey, nfld, L, pad)
+
+	sys.exit(0)

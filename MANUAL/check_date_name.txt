@@ -1,0 +1,52 @@
+Tukubai online command manual
+
+check_date_name
+
+【name】
+
+check_date_name : Check date in name format data
+
+[Format]
+
+Usage : check_date_name <check_file> <name_file>
+Option : --through <string>
+Version : Tue Oct 19 23:46:03 JST 2021
+Edition: 1
+
+【explanation】
+
+Checks to make sure the day/week/month data in <name_file> is
+correct according to the tag names and date patterns (D/W/M) in
+<check_file>.  If there are errors, the command reports all errors
+with the tag name and check pattern to standard output before exits
+with an error status.
+
+<option>
+If the data from the <name_file> matches <string>, then no check is
+performed.  The default value for <string> is "_".  You can specify
+this option multiple times to specify multiple <strings>.
+
+[Example 1] Normal check
+
+$ cat check
+A D 	<-- date
+B W 	<-- week
+C M 	<-- month
+D _ 	<-- unchecked
+
+$ cat data
+A 20081010
+B 200852
+C_001 200813 	<-- Incorrect month
+C_002 _ 	<-- _ is not checked
+C_003 200804
+D 9999
+
+$ check_date_name check data
+C_001 M
+$ echo $?
+1
+
+last modified: Fri Aug 12 12:56:05 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

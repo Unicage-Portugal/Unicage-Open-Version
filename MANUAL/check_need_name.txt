@@ -1,0 +1,83 @@
+Tukubai online command manual
+
+check_need_name
+
+【name】
+
+check_need_name : name file integrity check
+
+[Format]
+
+Usage : check_need_name <check_file> [<name_file>]
+Option : --blank <string>
+Version : Oct 20 17:32:10 JST 2022
+Edition: 1
+
+【explanation】
+
+Checks <name_file> to see if the tags in <check_file> have values.
+If some tags don't exist or have no value set, the command reports
+all such tag names to standard output and exits with an error.
+
+The <check_file> file works even if it has two fields. See Example 1 for details.
+<check_file> correctly recognizes field value + or any string other than "_".
+
+<Options>
+--blank <string>
+If the data in <name_file> is equal to <string>, the tag is
+considered to be blank (have no value).  In other words, tags that
+exist in <check_file> and whose value matches <string> will cause
+an error.  The default value for <string> is "_".
+
+
+[Example 1] 
+Normal check
+
+$ cat check_file
+A
+B
+C
+D
+
+
+$ cat check_file2 	← check_file and check_file2 are equivalent
+A need
+B need
+C need
+D need
+E_
+F_
+
+
+$ cat name_file
+A_
+B 12345
+C abcde
+D_001 _
+D_002 xxx
+
+
+$ check_need_name check_file name_file
+A
+D_001
+$ echo $?
+1
+$
+
+[Example 2] 
+Specify null data with the --blank option.
+
+$ cat name_file2
+A @
+B 1
+C 2
+D 3
+
+$ check_need_name --blank @ check_file name_file2
+A
+$ echo $?
+1
+
+last modified: Fri Dec 2 13:48:00 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

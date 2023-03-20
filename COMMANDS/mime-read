@@ -1,0 +1,248 @@
+#!/usr/bin/env python
+#coding: utf-8
+#
+# mime-read ＭＩＭＥ型式データリード（Open usp Tukubai版）
+# 
+# designed by Nobuaki Tounaka
+# written  by Masatomo Togashi
+#
+# The MIT License
+#
+# Copyright (C) 2020 Universal Shell Programming Laboratory
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+from __future__ import print_function
+
+_usage = "mime-read <name> <file>"
+_usage1 = "mime-read -v <file>"
+_version = "Sun Apr 19 23:32:18 JST 2020"
+_code = "Open usp Tukubai (LINUX+FREEBSD/PYTHON2.4/UTF-8)"
+
+import re
+import os
+import sys
+
+def error(msg, *arg):
+	print('Error[mime-read] :', msg % arg, file=sys.stderr)
+	sys.exit(1)
+
+def usage():
+	print("Usage    :", _usage, file=sys.stderr)
+	print("         :", _usage1, file=sys.stderr)
+	print("Version  :", _version, file=sys.stderr)
+	print("          ", _code, file=sys.stderr)
+	sys.exit(1)
+
+#
+# 入力ファイルオープン
+#
+def open_file(n):
+	if n >= len(sys.argv):	filename = '-'
+	else:
+		filename = sys.argv[n]
+	if filename == '-':	filename = '/dev/fd/0'	# sys.stdinをファイルディスクリプターで表記する
+	if Python3():	mode='r'
+	else:	mode='rU'	# Python2ではmodeがrUのときPython3と同様に読み込み時に各種改行記号がLF（\n）に統一される
+	try:
+		file = open(filename, mode)
+	except:
+		if filename=='/dev/fd/0':
+			error("標準入力ファイルをオープンできません。")
+		else:
+			error("ファイル '%s' をオープンできません。", filename)
+	return file
+
+# 改行符号（\r\n）の削除関数
+def rm_eol(line):
+	return line.rstrip("\r\n")	# 改行記号としてCRLF('\r\n')/CR('\r')/LF('\n')のすべてに対応する
+
+# BOMの取得関数
+def get_BOM():
+	if Python3():	return chr(int("FEFF",16))	# U+FEFFはBOMのUnicode符号位置
+	else:			return "\xEF\xBB\xBF"	# BOMは「EF BB BF」の3バイト
+
+# BOMの削除関数
+def rm_BOM(line):
+	global firstline
+	if not firstline: return line
+	firstline=False
+	if line.startswith(get_BOM()):	line=line[len(get_BOM()):]	# 行頭にBOMがあったらBOMを削除する
+	return line
+
+# Python3か判定する
+def Python3():
+	if sys.version_info >= (3, 0):
+		return True
+	else:
+		return False
+
+#
+# unfolding機能とBOM削除機能と改行記号除去機能付きの行入力（今の行と次の行とEOF判定を返す）
+#
+def getline(file,head,nextline):
+
+	if nextline: # 次の行が保管してあればそれを使う
+		line=nextline
+		nextline=None
+	else:
+		line=file.readline() # しっぽ（改行記号）付き
+
+	if not line: # EOFに達した
+		return None,None,True
+
+	line=rm_BOM(line)	# 先頭行のBOMは削除する
+
+	if head: # header行のときはunfolding処理をする
+		nextline=file.readline() # しっぽ（改行記号）付き
+		# 複数行headerがあれば連結して1行にする
+		while nextline:
+			# 次の行の行頭でlinear-white-spaceを検索
+			r = re.match(r'(^[\t ])+', nextline)
+			# もしあればunfoldingを実行する
+			if r:
+				line=rm_eol(line)+nextline # 今の行と次の行を連結する
+			# なければ論理行は完成
+			else:
+				break
+			nextline=file.readline() # しっぽ（改行記号）付き
+
+	line=rm_eol(line) # しっぽ（改行記号）を切る
+	return line,nextline,False # 今の行と次の行とEOF判定を返す
+
+#
+# メイン関数
+#
+if __name__ == '__main__':
+
+	if len(sys.argv) <= 1 \
+	 or sys.argv[1] == '--help' \
+	 or sys.argv[1] == '--version':
+		usage()
+
+	#
+	# オプション
+	#
+	if sys.argv[1] == '-v':
+		vflag = True
+	else:
+		vflag = False
+		name = sys.argv[1]
+
+	#
+	# fileを開く
+	#
+	file = open_file(2)
+
+	#
+	# 初期設定
+	#
+	boundaries=[]
+	boundary = None
+	head, hit = True, False
+	n=1
+	nextline=None
+	eof=False
+
+	firstline=True
+
+	#
+	# メインループ
+	#
+	while True:
+
+		line,nextline,eof=getline(file,head,nextline) # 入力ファイルからの論理行入力
+		if eof:
+			break
+
+		if head: # content header処理中
+
+			if not line: # 空行が来たら
+				head = False # 次行からcontent bodyが始まる
+			else:
+				# boundaryパラメータの検出
+				# パラメータの値はdouble quoteを使用してもしなくても受理する
+				r = re.match(r'Content-Type: [^"]*[\t ;]boundary[\t ]*=[\t ]*("?)([^"]*)("?)[\t ]*(;?)', line)
+				if r: # boundaryパラメータ（boundarycode）を検出した
+					if not r.group(1)==r.group(3):
+						error("ヘッダー行で二重引用符が閉じていません")
+					# boundaryを作成してstackへpush downする
+					boundary = '--' + r.group(2)
+					boundaries.append(boundary) # push down
+				# nameまたはfilenameパラメータの検出
+				# パラメータの値はdouble quoteを使用してもしなくても受理する
+				r = re.match(r'[^"]*[\t ;](name|filename)[\t ]*=[\t ]*("?)([^"]*)("?)[\t ]*(;?)', line)
+				if r: # name/filenameパラメータを検出した
+					if not r.group(2)==r.group(4):
+						error("ヘッダー行で二重引用符が閉じていません")
+					if vflag: # -v指定のときboundary区切りによるカウントとnameを出力する
+						if r.group(1)=="name":
+							print('%d %s' % (n,"name="+r.group(3)))
+						else:
+							print('%d %s' % (n,"filename="+r.group(3)))
+					else:
+						hit |= (r.group(3) == name) # コマンドで指定のnameだったらhit
+
+		else: # content body処理中
+
+			# boundaryの判定
+			if boundary==None:
+				boundarystate=None
+			elif line==boundary: # 行が--boundarycodeになっている
+				boundarystate="boundary"
+			elif line==boundary+"--": # 行が--boundarycode--になっている
+				boundarystate="boundary--"
+			elif line.endswith(boundary): # （binaryで）行の末尾が--boundarycodeになっている
+				boundarystate="bin-boundary"
+			elif line.endswith(boundary+"--"): # （binaryで）行の末尾が--boundarycode--になっている
+				boundarystate='bin-boundary--'
+			else:
+				boundarystate=None # boundaryではない
+
+			# 指定されたnameのcontent body
+			if hit:
+				# boundary行でないとき
+				if boundarystate==None:
+					print(line)
+					continue
+				# boundary行のとき
+				if boundarystate=="bin-boundary":
+					line=line[:len(line)-len(boundary)]  # 末尾の--boundarycodeを削除する
+					sys.stdout.write(line) # 改行なしの出力
+				elif boundarystate=="bin-boundary--":
+					line=line[:len(line)-len(boundary)-2]  # 末尾の--boundarycode--を削除する
+					sys.stdout.write(line) # 改行なしの出力
+				exit(0) # 指定されたnameのcontent bodyの終りを検出したので終了する
+
+			# その他のcontent body
+			else:
+				if boundarystate=="boundary" \
+				or boundarystate=="bin-boundary":
+					n += 1 # boundary区切りのカウントアップ
+					head = True # boundaryが来たら次行からheaderとなる
+				elif boundarystate=="boundary--" \
+				or   boundarystate=="bin-boundary--":
+					if len(boundaries)==1:
+						exit(0) # 最上階層の最後のboundaryなら終了する（content bodyは未検出のまま）
+					boundaries.pop() # pop up
+					boundary=boundaries[len(boundaries)-1]  # 上層のboundaryをstackから読み出して設定
+					# headはFalseのまま （--boundary--が来たら上層のcontent bodyに戻る）
+
+	if len(boundaries)>=1: # stackにboundaryが残ったままEOFに達した
+		error("boundaryが見つかりません")

@@ -1,0 +1,65 @@
+Tukubai online command manual
+
+check_dble_name
+
+【name】
+
+check_dble_name : Checks for duplicate data in name format
+
+[Format]
+
+Usage : check_dble_name <check_file> <name_file>
+Option : --through <string>
+Version : Sun Nov 21 17:29:32 JST 2021
+Edition: 1
+
+【explanation】
+
+Conducts a duplicate check of the values in <name_file> based on the
+tag names specified in <check_file>.
+
+If there are errors, the command reports all tag names which's data
+is duplicate and exit with the error status.
+
+【option】
+
+If the value defined in the <name_file> matches <string>, then no
+check is performed.  The default value for <string> is '_'. You can
+specify this option multiple times to specify multiple <string>s.
+
+
+[Example 1]
+
+$ cat check
+A
+
+$ cat data
+A_001 5
+A_002 5
+A_003 6
+A_004 7
+
+$ check_dble_name check data
+A_001
+A_002
+$ echo $?
+1
+
+[Example 2]
+
+$ cat data
+A_001 5
+A_002 5
+A_003 @
+A_004 @
+A_005 @
+
+$ check_dble_name --through @ check data
+A_001
+A_002
+$ echo $?
+1
+
+last modified: Fri Jul 15 16:35:40 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

@@ -1,0 +1,100 @@
+#!/usr/bin/env python
+#coding: utf-8
+#
+# numchar 文字列を数値文字参照に変換（Open usp Tukubaiオリジナル）
+# 
+# written  by Masatomo Togashi
+#
+# The MIT License
+#
+# Copyright (C) Ryuichi Ueda
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+from __future__ import print_function
+
+_usage = "numchar < <file>"
+_version = "Tue Feb 19 23:38:53 JST 2019"
+_code = "Open usp Tukubai (LINUX+FREEBSD/PYTHON2.4/UTF-8)"
+
+import re
+import os
+import sys
+import codecs
+
+def error(msg, *arg):
+	print('Error[numchar] :', msg % arg, file=sys.stderr)
+	sys.exit(1)
+
+def usage():
+	print("Usage   :", _usage, file=sys.stderr)
+	print("Version :", _version, file=sys.stderr)
+	print("         ", _code, file=sys.stderr)
+	sys.exit(1)
+
+# 文字からコードポイントを得てリストに追加する
+def append_codepoint(c,numlist):
+	cp=ord(c)
+	if cp <= 0xffff:	# サロゲードペアの各コードユニットはここで処理される
+		return numlist.append(cp)
+	# U+ffff超のunicode文字はサロゲートペアに変換してコードユニット対にする
+	cp -= 0x10000
+	high = cp >> 10   | 0xD800
+	low  = cp & 0x3FF | 0xDC00
+	numlist+=[high,low]
+	return numlist
+
+def openReadFile():
+	if not Python3():	return codecs.getreader('utf-8')(sys.stdin)
+	return codecs.getreader('utf-8')(sys.stdin.detach())
+
+# BOMの取得関数
+def get_BOM():
+	if Python3():	return chr(int("FEFF",16))	# U+FEFFはBOMのUnicode符号位置
+	else:	return unichr(int("FEFF",16))	# U+FEFFはBOMのUnicode符号位置
+
+# BOMの削除関数
+def rm_BOM(line):
+	global firstline
+	if not firstline: return line
+	firstline=False
+	if line.startswith(get_BOM()):	line=line[len(get_BOM()):]	# 行頭にBOMがあったらBOMを削除する
+	return line
+
+# Python3か判定する
+def Python3():
+	if sys.version_info >= (3, 0):
+		return True
+	else:
+		return False
+
+if __name__ == '__main__':
+
+	# 構文表示
+	if len(sys.argv) == 2:
+		if sys.argv[1] == '--help' or \
+		   sys.argv[1] == '--version':	usage()
+
+	firstline=True
+
+	for line in openReadFile():
+		line=rm_BOM(line)	# 先頭行に対してBOM削除をする
+		numlist=[]
+		for c in line.rstrip(): append_codepoint(c,numlist)
+		print("".join(map(lambda num: "&#x%x;" % num, numlist)))

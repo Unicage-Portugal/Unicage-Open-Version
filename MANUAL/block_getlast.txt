@@ -1,0 +1,54 @@
+Tukubai online command manual
+
+block_getlast
+
+【name】
+
+block_getlast : Within each block of records that share the same value in
+                their key field, outputs all of the records at the end of
+                the block that share the same value in the reference field.
+
+[Format]
+
+Usage : block_getlast key=<key> ref=<ref> <file>
+Version : Sun Feb 21 04:35:04 JST 2021
+Edition: 1
+
+【explanation】
+
+Within a block of records whose <key> field shares the same value,
+outputs all of the records at the end of the block that share the
+same value in the <ref> field.
+
+<key> and <ref> can be specified as ranges (Example: 1/3 2@5) or
+using "NF".
+
+If <file> is not specified or specified as "-" then the command reads from
+standard input.
+
+[Example 1]
+
+From among records who share the same invoice number, output the
+records who have the most recent date.
+
+(layout of data)
+1: Invoice_No. 2: line 3: item_1 4: item_2 5: input_date
+
+$ cat data
+0001 1 A 15 20081203
+0001 2 K 25 20081203
+0001 3 F 35 20081203
+0001 1 A 15 20081205
+0001 3 F 25 20081205
+0002 2 X 30 20081201
+0002 1 H 80 20081208
+
+$ block_getlast key=1 ref=NF data > result
+$ cat result
+0001 1 A 15 20081205
+0001 3 F 25 20081205
+0002 1 H 80 20081208
+
+last modified: Fri Aug 12 12:56:05 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

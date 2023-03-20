@@ -1,0 +1,148 @@
+Tukubai online command manual
+
+calsed
+
+【name】
+
+calsed : light sed
+
+[Format]
+
+Usage : calsed <org> <dst> <file>
+           calsed -f <script> <file>
+Option : -n<string>
+           -s<c>
+Version : Tue Oct 19 23:46:03 JST 2021
+Edition: 1
+
+【explanation】
+
+calsed is a "light" version of the "sed" string replacement function.
+Replaces the specified string with a specified string.  Unlike "sed"
+you cannot use Regular Expressions.  If a file name is not specified
+or if "-" is used, then calsed reads from the standard input.
+
+If the replacement string is "@" then the string is converted to
+null string.  To actually convert to "@" use the "-n" option.
+
+The "-s" option specifies the character which is to be converted to
+a space character within the replacement string.
+
+[Example 1]
+
+Specify a replacement string directly.
+$ cat data
+<td>NAME</td>
+<td>AGE</td>
+
+$ calsed NAME usp data
+<td>usp</td>
+<td>AGE</td>
+
+$ calsed NAME usp data | calsed AGE 25 -> result
+
+$ cat result
+<td>usp</td>
+<td>25</td>
+
+[Example 2]
+
+If there is a blank in the string after replacement
+$ calsed NAME "usp lab" data > result
+
+$ cat result
+<td>usp lab</td>
+<td>AGE</td>
+
+[Example 3]
+
+Null string in replacement string
+$ calsed NAME @ data > result
+
+$ cat result
+<td></td>
+<td>AGE</td>
+
+[Example 4]
+
+do not convert to null string
+$ calsed -n "" NAME @ data > result
+
+$ cat result
+<td>@</td>
+<td>AGE</td>
+
+[Example 5]
+
+specify characters to convert to whitespace
+$ calsed -s_ NAME usp_lab data
+<td>usp lab</td>
+<td>AGE</td>
+
+[Example 6]
+
+Specify the search strings and replacement strings in a file.  The
+file must be in "name" format.
+
+before1 after1
+before2 after2
+before3 after3
+
+Specify the original string and the converted string separated by a
+single space.  The converted string can be null or contain spaces.
+If the original string is "@" the original string is replaced with
+null string.  This string can be changed using the "-n" option.
+
+The "-s" option specifies a character in the converted string that
+will be converted to a space.
+
+$ cat script
+NAME usp
+AGE 25
+
+$ calsed -f script data > result
+
+$ cat result
+<td>usp</td>
+<td>25</td>
+
+[Example 7]
+
+$ cat script2
+NAME @
+AGE
+$ calsed -f script2 data > result
+
+$ cat result
+<td></td>
+<td></td>
+
+[Example 8]
+
+Replace whitespace literally
+$ cat script3 <- Specify [blank]usp[blank]lab[blank]
+NAME usp lab
+AGE 25
+
+$ calsed -f script3 data > result
+
+$ cat result
+<td> usp lab </td>
+<td>25</td>
+
+[Example 9]
+
+Specify characters to replace with whitespace characters
+$ cat script4
+NAME usp_lab
+AGE 25
+
+$ calsed -s_ -f script4 data > result
+
+$ cat result
+<td>usp lab</td>
+<td>25</td>
+
+last modified: Mon Aug 8 11:01:55 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

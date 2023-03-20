@@ -1,0 +1,240 @@
+#!/usr/bin/env python
+#coding: utf-8
+#
+# marume 誤差を丸める（Open usp Tukubai版）
+# 
+# designed by Nobuaki Tounaka
+# written  by Masatomo Togashi
+#
+# The MIT License
+#
+# Copyright (C) 2020 Universal Shell Programming Laboratory
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+from __future__ import print_function
+
+_usage = "marume [+age|-sage] <f1.d1> <f2.d2> .. <file>"
+_version = "Sun Apr 19 23:32:18 JST 2020"
+_code = "Open usp Tukubai (LINUX+FREEBSD/PYTHON2.4/UTF-8)"
+_keypat = r'(\d+)\.(0?)(\d+)$'
+		# 1: field number
+		# 2: 0 (means round integral part)
+		# 3: precision
+
+import re
+import os
+import sys
+from decimal import *
+from operator import itemgetter
+ 
+def round(x, n):
+	return x.quantize(Decimal('.1') ** n)
+
+def error(msg, *arg):
+	print('Error[marume] :', msg % arg, file=sys.stderr)
+	sys.exit(1)
+
+def usage():
+	print("Usage   :", _usage, file=sys.stderr)
+	print("Version :", _version, file=sys.stderr)
+	print("         ", _code, file=sys.stderr)
+	sys.exit(1)
+
+class FieldLine:
+	def __init__(self, line, allow_z = False):
+		self.__allow_zero = allow_z
+		self.__fields = [ line ]
+		self.__fields += [ x for x in line.split(' ') if x ]
+
+	def size(self):
+		return len(self.__fields) - 1
+
+	def getFieldNum(self, key):
+		if type(key) == type(0):
+			return key
+		if re.match(r'\d+$', key):
+			key = int(key)
+		elif key == 'NF':
+			key = self.size()
+		else:
+			key = self.size() - int(key[3:])
+			if key <= 0:
+				error("NF-x の x が大きすぎます。")
+		if key < 0:
+			error("フィールド番号が負です。")
+		if key == 0 and not self.__allow_zero:
+			error("フィールド番号が０です。")
+		if key > self.size():
+			error("フィールド番号が大きすぎます。")
+		return key
+
+	def getField(self, s, e = None):
+		s = self.getFieldNum(s)
+		if e == None:
+			e = s
+		else:
+			e = self.getFieldNum(e)
+		if s <= e:
+			return ' '.join(self.__fields[s : e + 1])
+		else:
+			t = self.__fields[e : s + 1]
+			t.reverse()
+			return ' '.join(t)
+
+#
+# 入力ファイルオープン
+#
+def open_file(n):
+	if n >= len(sys.argv):	filename = '-'
+	else:
+		filename = sys.argv[n]
+		del sys.argv[n]
+	if filename == '-':	filename = '/dev/fd/0'	# sys.stdinをファイルディスクリプターで表記する
+	if Python3():	mode='r'
+	else:	mode='rU'	# Python2ではmodeがrUのときPython3と同様に読み込み時に各種改行記号がLF（\n）に統一される
+	try:
+		file = open(filename, mode)
+	except:
+		if filename=='/dev/fd/0':
+			error("標準入力ファイルをオープンできません。")
+		else:
+			error("ファイル '%s' をオープンできません。", filename)
+	return file
+
+# 改行符号（\r\n）の削除関数
+def rm_eol(line):
+	return line.rstrip("\r\n")	# 改行記号としてCRLF('\r\n')/CR('\r')/LF('\n')のすべてに対応する
+
+# BOMの取得関数
+def get_BOM():
+	if Python3():	return chr(int("FEFF",16))	# U+FEFFはBOMのUnicode符号位置
+	else:			return "\xEF\xBB\xBF"	# BOMは「EF BB BF」の3バイト
+
+# BOMの削除関数
+def rm_BOM(line):
+	global firstline
+	if not firstline: return line
+	firstline=False
+	if line.startswith(get_BOM()):	line=line[len(get_BOM()):]	# 行頭にBOMがあったらBOMを削除する
+	return line
+
+# ファイル入力行の前処理
+def preproc_line(line):
+	line=rm_eol(line)	# 行末の改行記号を削除する
+	line=rm_BOM(line)	# ファイル先頭行の行頭にBOMがあったらこれを削除する
+	return line
+
+# Python3か判定する
+def Python3():
+	if sys.version_info >= (3, 0):
+		return True
+	else:
+		return False
+
+#
+# フィールド値の取得
+#
+def getval(line, n):
+	if re.match(r'(\+|-)?(\d+\.?|\d*\.\d+)$', line.getField(n)):
+		return Decimal(line.getField(n))
+	else:
+		error("数値変換できません。")
+
+#
+# 丸め出力
+#
+def pr_round(x, prec):
+	r = round(x, prec)
+	if r == 0 :
+		s = '%.*f' % (prec, r)
+		s = s.lstrip("-")
+		return str(s)
+	else :
+		return('%.*f' % (prec, r))
+
+#
+# メイン関数
+#
+if __name__ == '__main__':
+
+	if len(sys.argv) <= 1 \
+	 or sys.argv[1] == '--help' or sys.argv[1] == '--version':
+		usage()
+
+	#
+	# +age / -sage
+	#
+	if sys.argv[1] == '+age':
+		getcontext().rounding = ROUND_UP
+		del sys.argv[1]
+	elif sys.argv[1] == '-sage':
+		getcontext().rounding = ROUND_DOWN
+		del sys.argv[1]
+	else:
+		getcontext().rounding = ROUND_HALF_UP
+	if len(sys.argv) <= 1:
+		usage()
+
+	if re.match(_keypat, sys.argv[-1]):
+		file = open_file(len(sys.argv))	# コマンド実行パラメータ最終部が<file>でないとき
+	else:
+		file = open_file(len(sys.argv) - 1)	# コマンド実行パラメータ最終部が<file>であるとき
+
+	#
+	# 精度の取得
+	#
+	prec = set()
+	f=set()
+	for arg in sys.argv[1:]:
+		p = re.match(_keypat, arg)
+		if not p:
+			usage()
+		# 「フィールド+精度」指定なら
+		f.add(p.group(1))	# フィールドの集合を作る
+		# (フィールド,精度)のtupleで集合を作る
+		if p.group(2) == '':
+			prec.add((int(p.group(1)), int(p.group(3))))
+		else:
+			prec.add((int(p.group(1)), -int(p.group(3))))
+	if len(f)!=len(prec):	# フィールド番号部に重複があるか？
+		error("ひとつのフィールドに複数の異なる精度が指定されています。")
+	# sort
+	prec=sorted(list(prec),key=itemgetter(0))	# precをリスト化してからフィールド番号部でsortする
+
+	firstline=True
+
+	#
+	# メインループ
+	#
+	for line in file:
+		line=preproc_line(line)	# 入力行の前処理
+		line = FieldLine(line)
+		p = prec[:]
+		outstr=''	# 出力文字列
+		for i in range(1, line.size() + 1):
+			while p and i > p[0][0]:	# 未処理フィールドがあって番号がiより小
+				del p[0]	# stackのtopを処理済みとして削除
+			if not p or i < p[0][0]:	# 処理対象フィールドでなければそのまま出力
+				outstr+=line.getField(i)+' '
+			else:	# 処理対象フィールドなら丸め出力
+				outstr+=pr_round(getval(line, i), p[0][1])+' '
+		print(outstr.rstrip())	# 最後尾の空白を除去した文字列をprint()する
+
+	sys.exit(0)

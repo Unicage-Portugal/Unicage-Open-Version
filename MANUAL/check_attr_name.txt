@@ -1,0 +1,104 @@
+Tukubai online command manual
+
+check_attr_name
+
+【name】
+
+check_attr_name : Checks the attributes of data in the name format
+
+[Format]
+
+Usage : check_attr_name <check_file> <name_file>
+Option : --through <string> --ngword <ng_file>
+
+Attributes:
+    n N (unsigned integer number)
+    s S (signed integer number)
+    f F (unsigned number with fraction part)
+    v V (signed number with fraction part)
+    e E (alphabetic characters)
+    a A (ASCII characters)
+    b B (alphabetic and numeric characters)
+    h H (half-width characters)
+    l L (half-width Katakana characters)
+    z Z (full-width characters)
+    k K (full-width Katakana characters)
+    x X (printable characters)
+    c C (check digit)
+    o O (non lower case letters)
+    j J (address letters = full-width + ASCII)
+    m M (email address)
+
+Version : Mon Dec 20 21:02:03 JST 2021
+Edition: 1
+
+【explanation】
+
+Checks the data in <name_file> against the tag names, string length
+and attributes defined in <check_file>. If the attribute is specified in
+uppercase then the string length must mach exactly, if the attribute is
+specified in lowercase then the string length must be less than or equal
+to the specified length.
+If the tag in the <name_file> is specified as TagName_Number, then
+the "_Number" part is removed before checking.
+If there is an error, the command ends with an error and the tag name,
+string length and attribute is output.
+
+【option】
+
+--through <string>
+If the data in <name_file> matches any of the <strings> specified in this
+option, the check is skipped. The default value for <string> is "_".
+You can specify the option multiple times in order to specify multiple
+<strings>.
+
+--ngword <ng_file>
+If checking Japanese characters using the z Z x X j or J attributes,
+if any of the characters are contained in <ng_file> the command returns
+an error.
+
+
+[Example 1] Normal check
+
+$ cat check
+A N3 	← 3-digit integer
+B n4 	← Integer with 4 digits or less
+C x3 	← Up to three characters
+D X6 	← Exactly 6 characters
+
+$ cat data
+A 200
+B 12345
+C abcde
+D_001 xxxxxx 	← Checked as "D 6X"
+D_002 xxxxx
+D_003 xxxx
+
+$ check_attr_name check data
+B n4
+C x3
+D_002 X6
+D_003 X6
+$ echo $?
+1
+
+
+[Example 2] Specify a value that is not checked with the --through option
+
+$ cat data2
+A 200
+B _
+C _
+D_001 xxxxxx
+D_002 _
+D_003 _
+
+
+$ check_attr_name --through _ check data2
+$ echo $?
+0
+
+
+last modified: Wed Aug 3 08:29:48 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

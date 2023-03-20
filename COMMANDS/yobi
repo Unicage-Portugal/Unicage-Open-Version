@@ -1,0 +1,228 @@
+#!/usr/bin/env python
+#coding: utf-8
+#
+# yobi 曜日挿入フィルタ（Open usp Tukubai版）
+# 
+# designed by Nobuaki Tounaka
+# written  by Masatomo Togashi
+#
+# The MIT License
+#
+# Copyright (C) 2020 Universal Shell Programming Laboratory
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+from __future__ import print_function
+
+_usage = "yobi [-e|-j] <field> <filename>"
+_usage1 = "yobi -d [-e|-j] <string>"
+_version = "Sat Jun 20 21:57:23 JST 2020"
+_code = "Open usp Tukubai (LINUX+FREEBSD/PYTHON2.4/UTF-8)"
+_keypat = r'(\d+|NF(-\d+)?)$'
+
+import re
+import os
+import sys
+from getopt import getopt
+from datetime import datetime
+
+def error(msg, *arg):
+	print('Error[yobi] :', msg % arg, file=sys.stderr)
+	sys.exit(1)
+
+def usage():
+	print("Usage   :", _usage, file=sys.stderr)
+	print("        :", _usage1, file=sys.stderr)
+	print("Version :", _version, file=sys.stderr)
+	print("         ", _code, file=sys.stderr)
+	sys.exit(1)
+
+class FieldLine:
+	def __init__(self, line, allow_z = False):
+		self.__allow_zero = allow_z
+		self.__fields = [ line ]
+		self.__fields += [ x for x in line.split(' ') if x ]
+
+	def size(self):
+		return len(self.__fields) - 1
+
+	def getFieldNum(self, key):
+		if type(key) == type(0):
+			return key
+		if re.match(r'\d+$', key):
+			key = int(key)
+		elif key == 'NF':
+			key = self.size()
+		else:
+			key = self.size() - int(key[3:])
+			if key <= 0:
+				error("NF-x の x が大きすぎます。")
+		if key < 0:
+			error("フィールド番号が負です。")
+		if key == 0 and not self.__allow_zero:
+			error("フィールド番号が０です。")
+		if key > self.size():
+			error("フィールド番号が大きすぎます。")
+		return key
+
+	def getField(self, s, e = None):
+		s = self.getFieldNum(s)
+		if e == None:
+			e = s
+		else:
+			e = self.getFieldNum(e)
+		if s <= e:
+			return ' '.join(self.__fields[s : e + 1])
+		else:
+			t = self.__fields[e : s + 1]
+			t.reverse()
+			return ' '.join(t)
+
+#
+# 入力ファイルオープン
+#
+def open_file(n):
+	if n >= len(sys.argv):	filename = '-'
+	else:
+		filename = sys.argv[n]
+		del sys.argv[n]
+	if filename == '-':	filename = '/dev/fd/0'	# sys.stdinをファイルディスクリプターで表記する
+	if Python3():	mode='r'
+	else:	mode='rU'	# Python2ではmodeがrUのときPython3と同様に読み込み時に各種改行記号がLF（\n）に統一される
+	try:
+		file = open(filename, mode)
+	except:
+		if filename=='/dev/fd/0':
+			error("標準入力ファイルをオープンできません。")
+		else:
+			error("ファイル '%s' をオープンできません。", filename)
+	return file
+
+# 改行符号（\r\n）の削除関数
+def rm_eol(line):
+	return line.rstrip("\r\n")	# 改行記号としてCRLF('\r\n')/CR('\r')/LF('\n')のすべてに対応する
+
+# BOMの取得関数
+def get_BOM():
+	if Python3():	return chr(int("FEFF",16))	# U+FEFFはBOMのUnicode符号位置
+	else:			return "\xEF\xBB\xBF"	# BOMは「EF BB BF」の3バイト
+
+# BOMの削除関数
+def rm_BOM(line):
+	global firstline
+	if not firstline: return line
+	firstline=False
+	if line.startswith(get_BOM()):	line=line[len(get_BOM()):]	# 行頭にBOMがあったらBOMを削除する
+	return line
+
+# ファイル入力行の前処理
+def preproc_line(line):
+	line=rm_eol(line)	# 行末の改行記号を削除する
+	line=rm_BOM(line)	# ファイル先頭行の行頭にBOMがあったらこれを削除する
+	return line
+
+# Python3か判定する
+def Python3():
+	if sys.version_info >= (3, 0):
+		return True
+	else:
+		return False
+
+#
+# 曜日の計算
+#
+def weekday(date, lang):
+	if not re.match(r'\d{8}', date):
+		error("日付が8桁整数になっていません。")
+	try:
+		w = datetime(int(date[:4]), int(date[4:6]), int(date[6:])).weekday()
+	except:
+		error("日付が正しくありません。")
+	return {
+		'':  [ str(x) for x in list(range(1, 7)) + [ 0 ] ],
+		'e': [ 'Mon', 'Tue','Wed','Thu','Fri','Sat','Sun' ],
+		'j': [ '月',  '火', '水', '木', '金', '土', '日' ],
+	}[lang][w]
+
+#
+# メイン関数
+#
+if __name__ == '__main__':
+
+	if len(sys.argv) < 2 \
+	 or sys.argv[1] == '--help' \
+	 or sys.argv[1] == '--version':
+		usage()
+
+	#
+	# オプションの取得
+	#
+	direct, lang = '', ''
+	try:
+		optlist,args = getopt(sys.argv[1:], "dej")
+	except:
+		error("オプションの指定が不正です。")
+	for opt in optlist:
+		if opt[0] == '-d':
+			if direct != '':
+				error("-d指定が重複しています。")
+			direct = True
+		else:
+			if lang != '':
+				error("言語の指定が複数あります。")
+			# '-e' or '-j':
+			lang = opt[0][1]
+	if not args:
+		error("ファイルまたは文字列の指定がありません。")
+	sys.argv = sys.argv[0:1] + args	# オプションを除くリスト
+	#
+	# ダイレクトモード
+	#
+	if direct:
+		print(weekday(sys.argv[1], lang))
+		sys.exit(0)
+
+	#
+	# <field>
+	#
+	if not re.match(_keypat, sys.argv[1]):
+		error("フィールドの指定が不正です。")
+	fld = sys.argv[1]
+
+	#
+	# メインループ
+	#
+	firstline=True
+	head=True
+	for line in open_file(2):
+		line = FieldLine(preproc_line(line))
+		if head:
+			fld=line.getFieldNum(fld)
+			numfld=line.size()
+			head=False
+		elif line.size() != numfld:
+			error("行のフィールド数が一定ではありません。")
+		if fld < line.size(): endchar=' '
+		else:                 endchar=''
+		print(line.getField(1, fld), weekday(line.getField(fld), lang), end=endchar)
+		if fld < line.size():
+			print(line.getField(fld + 1, line.size()), end='')
+		print()
+
+	sys.exit(0)

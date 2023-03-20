@@ -1,0 +1,339 @@
+#!/usr/bin/env python
+#coding: utf-8
+#
+# 1bai : 前0をとる（Open usp Tukubai版）
+# 
+# designed by Nobuaki Tounaka
+# written  by Masatomo Togashi
+#
+# The MIT License
+#
+# Copyright (C) 2022 Universal Shell Programming Laboratory
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+from __future__ import print_function
+import re
+import sys
+
+_usage = "1bai [-r] [<f1> <f2> ...] [<file>]"
+_usage2 = "1bai -d[r] string"
+_usage3 = "1bai -[r]d string"
+_version = "Fri Aug 20 22:29:15 JST 2022"
+_code = "Open usp Tukubai (LINUX+FREEBSD/PYTHON2.4/UTF-8)"
+_keypat = r'((\d+|NF(-\d+)?)(/(\d+|NF(-\d+)?))?)(@((\d+|NF(-\d+)?)(/(\d+|NF(-\d+)?))?))*$'
+_keypatNF=r'(?P<m0>(?P<m01>\d+)|(?P<m02>NF(?P<m03>-\d+)?))(/(?P<m1>(?P<m11>\d+)|(?P<m12>NF(?P<m13>-\d+)?)))?$'
+
+def error(msg, *arg):
+	print('Error[1bai] :', msg % arg, file=sys.stderr)
+	sys.exit(1)
+
+def usage():
+	print("Usage   :", _usage, file=sys.stderr)
+	print("        :", _usage2, file=sys.stderr)
+	print("        :", _usage3, file=sys.stderr)
+	print("Version :", _version, file=sys.stderr)
+	print("         ", _code, file=sys.stderr)
+	sys.exit(1)
+
+#
+# 入力ファイルオープン
+#
+def open_file(n, mode = 'r'):
+	filename = sys.argv[n]	# 指定位置のコマンドパラメータをとる
+	if filename == '-':	# sys.stdinのとき
+		filename = '/dev/fd/0'	# ファイルディスクリプターで表記する
+	if not Python3():
+		mode='rU'	# Python2ではmodeがrUのときPython3と同様に読み込み時に各種改行記号がLF（\n）に統一される
+	# 標準入力も含めてopen()で開く
+	try:
+		file = open(filename, mode)
+		del sys.argv[n]
+	except:
+		if filename != '/dev/fd/0':
+			file = open('/dev/fd/0', mode)	# 通常ファイルのopen()で失敗したらsys.stdinを開く
+	return file
+
+# 不要な空白の削除関数
+def rm_sp(line):
+	return re.sub(r' {2,}',' ',re.sub(r'^ +| +$','',line))	# 行頭と行末の空白を削除し連続空白を単空白にする
+
+# 改行符号（\r\n）の削除関数
+def rm_eol(line):
+	return line.rstrip("\r\n")	# 改行記号としてCRLF('\r\n')/CR('\r')/LF('\n')のすべてに対応する
+
+# BOMの取得関数
+def get_BOM():
+	if Python3():	return chr(int("FEFF",16))	# U+FEFFはBOMのUnicode符号位置
+	else:			return "\xEF\xBB\xBF"	# BOMは「EF BB BF」の3バイト
+
+# BOMの削除関数
+def rm_BOM(line):
+	global firstline
+	if not firstline: return line
+	firstline=False
+	if line.startswith(get_BOM()):	line=line[len(get_BOM()):]	# 行頭にBOMがあったらBOMを削除する
+	return line
+
+# ファイル入力行の前処理
+def preproc_line(line):
+	line=rm_eol(line)	# 行末の改行記号を削除する
+	line=rm_BOM(line)	# ファイル先頭行の行頭にBOMがあったらこれを削除する
+	line=rm_sp(line)	# 行頭と行末の空白を削除し連続空白を単空白にする
+	return line
+
+# Python3か判定する
+def Python3():
+	if sys.version_info >= (3, 0):
+		return True
+	else:
+		return False
+
+# NF相対欄位置からNF（欄数）に応じた0発進の欄位置に変換する
+def getpos(base_pos):
+	# NF相対欄位置からの変換:
+	#  nのときはそのまま
+	#  0のときはNF（欄数）
+	#  -nのときはNF-n
+	# 0発信とするために-1を加える
+	if base_pos > 0:
+		pos=base_pos-1
+		if pos > NF:	error("フィールド番号が大きすぎます。 %s",str(base_pos))
+	else:
+		pos=NF+base_pos-1
+		if pos < 0:	error("フィールド指定でNF-x の x が大きすぎます。 %s","NF-"+str(-base_pos))
+	return pos
+
+# NF相対欄位置リスト（rel_keylist）からNF（欄数）に応じた実際の欄位置リスト（keylist）を作成する
+def make_keylist(rel_keylist):
+	# rel_keylistの要素には区間をあらわす整数tupleの(start,end)と、単一欄をあらわす整数がある
+	if rel_keylist==[None]:	# 全欄指定
+		return list(range(0,NF))
+	keylist=[]
+	for fieldpos in rel_keylist:
+		if type(fieldpos)==int:	keylist.append(getpos(fieldpos))	# 単一欄
+		else:	# (a/b)の区間
+			start=getpos(fieldpos[0])
+			end=getpos(fieldpos[1])
+			if start <= end:	# 正順
+				keylist+=range(start,end+1)
+			else:	# 逆順
+				keylist+=range(start,end-1,-1)
+	for key in keylist:
+		if key < 0 or key >= NF:
+			error("キーの位置が行のフィールド範囲を逸脱しています。")
+	return list(set(keylist))	# 欄位置は0発進
+
+# 欄番号文字列をNF相対形式で整数化する
+def getFieldNum(str,str1,str2):
+	# n または NF または NF-x の形式の欄番号をNF相対形式の整数で確定する
+	# 正規表現で「\d+|NF(-\d+)?」にmatchする全体をstrが、「\d+」でmatchする部分をstr1が、「(-\d+)?」でmatchする部分をstr2が保持している
+	# NF相対形式の整数化:
+	#  単独のnが0のときはNone
+	#  単独のnが0以外のときは整数のn
+	#  単独のNFのときは整数の0
+	#  NF-nのときは整数の-n
+	# 実際の欄番号にする際には行ごとに得たNF（欄数）を使用して計算する
+	
+	if str1:	# n
+		fieldnum=int(str1)
+		if fieldnum==0:	# 欄番号0は全欄指定を意味する
+			fieldnum=None
+	else:	# NF-n または NF
+		if str2:	# NF-n
+			fieldnum=int(str2)
+		else:	# NF
+			fieldnum=0
+	return fieldnum
+
+#
+# ひとつの欄指定パラメータから欄番号リストを得る（区間指定にも対応する）
+#
+def getFieldList(field_param):
+	mobj = re.match(_keypat,field_param)	# 構文検査のために実行する
+	if not mobj:	# フィールド指定の形式が不正
+		error("フィールド指定の形式が不正です。 %s",field_param)
+	fieldlist=[]
+	concatlist=field_param.split("@")	# @で分割する
+	for fieldnum in concatlist:
+		mobj = re.match(_keypatNF,fieldnum)
+		start=getFieldNum(fieldnum,mobj.group('m01'),mobj.group('m03'))	# 前端部を得る
+		if mobj.group('m1'):	# a/bの形式で区間指定をしている
+			end=getFieldNum(fieldnum,mobj.group('m11'),mobj.group('m13'))	# 後端部を得る
+			fieldlist.append((start,end))	# 区間で確定
+		else:
+			fieldlist.append(start)	# 前端部単独で確定
+	return fieldlist
+
+#
+#	コマンドのフィールド指定パラメータリストから処理対象のNF相対欄位置リストを作成する
+#
+def getTargetFields(args):
+	if args==[]:
+		return [None]	# フィールド指定パラメータリストが空のときは全欄指定とする
+	ans = []
+	for e in args:
+		ans+=getFieldList(e)
+	if None in ans:
+		return [None]	# 欄位置にひとつでも0を指定するものがあるときは全欄指定とする
+	ans=list(set(ans)) # 集合化によってリストの重複を解消する
+	return ans
+
+# 前0の削除/小数点以下の後0の削除/符号処理/-r指定による正負反転
+def CripZero(field,r):
+	# format検査
+	try:
+		float(field)
+	except:
+		error("%sは数値ではありません",field)
+	if field.upper().find("E")>0: # 浮動小数点数は排除する
+		error("%sは整数でも固定小数点数でもありません",field)
+
+	# 負符号の記憶と削除
+	negative=False
+	if field[0]=="-":
+		negative=True
+		field=field.lstrip("-")
+
+	# 正符号の削除
+	else: field=field.lstrip("+")
+
+	# 前0と後0の削除
+	field=field.lstrip("0") # 前0の削除
+	if field.startswith("."): field="0"+field # 小数点で始まるときは前に0を付ける
+	if field.find(".")>=0:    field=field.rstrip("0") # 小数点を含むとき後0を削除
+	field=field.rstrip(".") # 小数点で終るときは整数とする
+	if field=="": return "0" # 0ならそのまま返す
+
+	# 負符号を復元する
+	if negative: field="-"+field
+
+	# 正負反転
+	if r: # 指定あり
+		# 数値化し正負反転し文字列に戻す
+		if field.find(".")>0: # 小数点付き
+			field=str(-float(field))
+		else: # 整数
+			field=str(-int(field))
+
+	return field
+
+#
+# 直接入力文字列の前処理
+#
+#  Python3においてコマンドラインからの直接入力文字列中にUnicode符号位置がU+FFFFを超えるコードがあると
+#  Unicode文字に正しく変換されない場合があることへの対処をする
+#  Unicode符号位置がU+FFFFを超えるコードを含む文字列は数値を表すことはないのでエラーメッセージを正しく出力するための措置
+def utf2ucs(instr):
+	outstr=""	# 出力文字列
+	intlist=[]	# 作業用整数リスト
+	for char in instr:
+		if ord(char)>=0xdc00 and ord(char)<=0xdcff:	# 文字の符号位置がU+DCxxの範囲にあったら「UTF8もどき」
+			intlist.append(ord(char)-0xdc00)	# 0xdc00のげたをはずして整数リストに入れる
+		else:	# 通常文字がきたら
+			if len(intlist)>0:	# ここまでに「UTF8もどき」列を変換した整数リストがあったら
+				# bytesに変換してutf8からUCSへの変換をして出力文字列に追加
+				outstr+= bytes(intlist).decode("utf_8")
+				intlist=[]	# 整数リストを再初期化
+			outstr+=char	# 新しくきた通常文字を出力文字列に追加
+	# 「UTF8もどき」列を変換した整数リストが残っていたら
+	# bytesに変換してutf8からUCSへの変換をして出力文字列に追加
+	if len(intlist)>0:	outstr+= bytes(intlist).decode("utf_8")
+	return outstr
+
+# main
+
+if __name__ == '__main__':
+
+	r,d = False, False # default値
+
+	# コマンドの説明表示
+	if len(sys.argv) <= 1 \
+	 or sys.argv[1] == '--help' \
+	 or sys.argv[1] == '--version':
+		usage()
+
+	# パラメータ解析
+	numparam=0
+	minparam=1
+	argc = len(sys.argv)
+	for i in range(argc-1,-1,-1):	# パラメータ列を後方から前方へ処理する
+		if i==0:
+			del sys.argv[0]
+		elif sys.argv[i].startswith("-r"): # -rで始まるオプション
+			if r:
+				error("-rオプションが重複しています")
+			else: r=True
+			if sys.argv[i][2:]=="d": # -rdオプション
+				if d:
+					error("-dオプションが重複しています")
+				d=True
+			elif not sys.argv[i]=="-r": # -rオプション
+				error("%sは無効なオプションです",arg)
+			del sys.argv[i]
+		elif sys.argv[i].startswith("-d"): # -dで始まるオプション
+			if d:
+				error("-dオプションが重複しています")
+			else: d=True
+			if sys.argv[i][2:]=="r": # -drオプション
+				if r:
+					error("-rオプションが重複しています")
+				r=True
+			elif not sys.argv[i]=="-d": # -dオプション
+				error("%sは無効なオプションです",arg)
+			del sys.argv[i]
+		else:
+			numparam+=1
+
+	# パラメータ検査
+	if numparam<minparam:
+		error("パラメータの数が足りません")
+
+	# ファイルに対する処理
+	if not d:
+		# 入力ファイルを開く
+		file=open_file(len(sys.argv)-1)	# パラメータ列の最後尾をファイル名と仮定してopenできたら最後尾は削除する
+
+		# フィールド指定パラメータからNF相対欄位置リストを作成する
+		rel_keylist = getTargetFields(sys.argv)	# sys.argvに残っているのはフィールド指定のみ
+
+		NF=-1
+		firstline=True
+		for line in file: # 入力ファイルを読む
+			line=preproc_line(line)
+			inputfields=line.split(" ")
+			nf=len(inputfields)
+			if nf != NF:	# 欄数が変化したかまたは先頭行なら
+				NF=nf
+				fieldnums=make_keylist(rel_keylist)	# 行の欄数NFを見てNF相対欄位置リストから(絶対)欄位置リストを決定する
+			# 指定フィールドに対して前0の削除/小数点以下の後0の削除/符号処理/正負反転処理をする
+			for fieldnum in fieldnums:
+				inputfields[fieldnum]=CripZero(inputfields[fieldnum],r)
+			print(" ".join(inputfields))	# フィールドを空白区切りで出力する
+	# -d指定で文字列に対する直接処理
+	else:
+		if numparam>1:
+			error("d指定で余分なパラメータがあります")
+		string=sys.argv.pop() # -r/-d以外のパラメータ列最後尾のファイル名相当部を入力文字列とする
+		if Python3():
+			string=utf2ucs(string)	# Python3のときは-d指定の文字列に対して前処理をする
+		print(CripZero(string,r))
+
+	# 終了
+	sys.exit(0)

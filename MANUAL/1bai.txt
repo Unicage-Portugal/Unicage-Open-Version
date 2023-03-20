@@ -1,0 +1,127 @@
+Tukubai online command manual
+
+1bai
+
+【name】
+
+1bai : Removes leading zeros
+
+[Format]
+
+Usage : 1bai [-r] [<f1> <f2> ...] [<file>]
+           1bai -d[r] <string>
+           1bai -[r]d <string>
+Version : Sat Aug 20 22:29:15 JST 2022
+
+【explanation】
+
+Removes leading zeros from the specified field in a specified file or from the specified string.
+(Remove 0 after the decimal point)
+Multiply by -1 with the -r (reverse) option.
+If you add the -d option, the character string specified by the argument will be processed.
+Specify - as <file> or omit it to use standard input.
+Field specification: If <f1> <f2> ... is omitted, all fields are specified.
+If there is even one 0 in field specification <f1> <f2> ..., all fields are specified.
+When the command input is "1bai -r", all fields are multiplied by -1 to the standard input.
+If the command input is "1bai", display the command syntax and exit.
+
+[Example 1]
+
+$ cat data
+0000000 Hamachi______ 50 F 91 59 20 76 54
+0000001 Suzuta______ 50 F 46 39 8 5 21
+0000003 Sugiyama______ 26 F 30 50 71 36 30
+0000004 White clay______ 40 M 58 71 20 10 6
+0000005 Sakimura______ 20 M 82 79 16 21 80
+0000007 Kajikawa______ 42 F 50 2 33 15 62
+
+$ 1bai 1 data > data2
+$ cat data2 <- Remove the leading "0" from the first field.
+0 Hamachi______ 50 F 91 59 20 76 54
+1 Suzuta______ 50 F 46 39 8 5 21
+3 Sugiyama______ 26 F 30 50 71 36 30
+4 White clay______ 40 M 58 71 20 10 6
+5 Sakimura______ 20 M 82 79 16 21 80
+7 Kajikawa______ 42 F 50 2 33 15 62
+
+[Example 2]
+
+Multiply by -1 with the -r (reverse) option.
+$ cat file
+a 1 2 3 4 5
+b 1 2 3 4 5
+$ 1bai -r 2 file
+a -1 2 3 4 5
+b -1 2 3 4 5
+$ 1bai -r 2/4 file
+a -1 -2 -3 4 5
+b -1 -2 -3 4 5
+$ 1bai -r 2 NF-1/NF file
+a -1 2 3 -4 -5
+b -1 2 3 -4 -5
+
+[Example 3]
+
+Combine up3 and sm2 to subtract records with the same key.
+$ cat data
+a 5
+b 2
+$ cat data2
+a 2
+b 1
+$ 1bai -r 2 data2 | up3 key=1 data | sm2 1 1 2 2
+a 3
+b 1
+
+[Example 4]
+
+The -d option is direct mode. Specify the string you want to edit directly in the argument.
+$1bai -d 0123
+123
+$1bai -d 0123.400
+123.4
+$1bai -d 0123.000
+123
+$1bai -d 0
+0
+$1bai -d -000123.400
+-123.4
+$1bai -d +000123.400
+123.4
+$1bai -dr 0123
+-123
+
+[Example 5]
+
+A leading zero disables automatic octal substitution in shell and awk printf statements.
+$ num=010 <- interpreted as an octal number
+$ printf '%04d\n' $num
+0008
+$ printf '%04d\n' $(1bai -d $num)
+0010
+
+[Example 6]
+
+The 1bai command is useful for data converted from fixed-length text, which often has signs and leading and trailing zeros.
+$ cat file
+a 000123.000 000345.000
+b 000098.450 000100.000
+
+$ 1bai 2 3 file
+a 123 345
+b 98.45 100
+
+【caution】
+
+If the last run-time parameter is the name of an existing file, open it as the input file.
+This file name may be a string of numbers such as "10".
+If the last file name is not an existing file name, treat it as a field,
+Standard input (stdin) is used as an abbreviation for the input file name.
+
+【column】
+Origin of naming
+It is named 1bai because it removes 0's by multiplying the target number string by 1.
+
+last modified: Sat Aug 20 22:29:15 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

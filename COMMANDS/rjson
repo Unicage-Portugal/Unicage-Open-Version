@@ -1,0 +1,159 @@
+#!/usr/bin/env python
+#coding: utf-8
+#
+# rjson : JSON 形式のファイルをフィールド形式に変換する（Open usp Tukubai版）
+# 
+# designed by Aoki Takemasa
+# written  by Hinata Yanagi
+#
+# The MIT License
+#
+# Copyright (C) 2022 Universal Shell Programming Laboratory
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+from __future__ import print_function
+import sys
+import os.path
+import io
+import json
+from collections import OrderedDict
+
+_usage = "rjson [-p<c>][-m<c>][-s<c>][-n<string>] [<json-file>]"
+_version = "Mon Sep 12 12:13:51 JST 2022"
+_code = "Open usp Tukubai (LINUX+FREEBSD/PYTHON2.7+/UTF-8)"
+
+# supplementary assignment for under 3.0
+if sys.version_info >= (3, 0):
+	unicode = str
+
+def usage():
+	print("Usage   :", _usage, file=sys.stderr)
+	print("Version :", _version, file=sys.stderr)
+	print("         ", _code, file=sys.stderr)
+	sys.exit(1)
+
+#
+# Throw an error and terminate in failure.
+#
+
+def error(msg, *arg):
+	print('Error[rjson] :', msg % arg, file=sys.stderr)
+	sys.exit(1)
+
+#
+# Open an input file
+#
+def open_file(n, quiet = False):
+	if type(n) == type(0):
+		if n >= len(sys.argv):
+			n = '-'
+		else:
+			n = sys.argv[n]
+	if n == '-':
+		file = sys.stdin
+	else:
+		try:
+			file = open(n)
+		except:
+			if not quiet:
+				error("Cannot open file '%s'", n)
+			else:
+				sys.exit(1)
+	return file
+
+#
+#  Print an object in fields format.
+#
+
+def fields_of_object(value, path = ""):
+	if type(value) == OrderedDict:
+		keys = [value.keys()]
+		for key in value.keys():
+			key_print = key.replace(' ', key_whitespace)
+			fields_of_object(value[key], key_print if path == '' else path + separator + key_print)
+		return
+	elif type(value) == list:
+		index = 1
+
+		for item in value:
+			fields_of_object(item, ('' if path == '' else path + ' ') + str(index))
+			index += 1
+		return
+	elif value == '':
+		value_print = null_padding
+	elif type(value) == str or type(value) == unicode:
+		value_print = value.replace(' ', value_whitespace)
+	elif type(value) == int:
+		value_print = str(value)
+	elif value == None:
+		value_print = null_padding
+	elif value == True:
+		value_print = "true"
+	elif value == False:
+		value_print = "false"
+	else:
+		value_print = str(value)
+
+	if path == '':
+		print(value_print)
+	else:
+		print(path, value_print)
+
+#
+# main
+#
+
+if __name__ == '__main__':
+	# Read from the standard input if no arguments given.
+	if len(sys.argv) == 1:
+		sys.argv = ["-"]
+	# Print how to use the command
+	elif sys.argv[1] == '--help' or sys.argv[1] == '--version':
+		usage()
+
+	separator = ' '
+	key_whitespace = '_'
+	value_whitespace = '_'
+	null_padding = '_'
+
+	while len(sys.argv) > 1:
+		if sys.argv[1][:2] == "-p" and len(sys.argv[1]) > 2:
+			separator = sys.argv[1][2:]
+			del sys.argv[1]
+		elif sys.argv[1][:2] == "-m" and len(sys.argv[1]) > 2:
+			key_whitespace = sys.argv[1][2:]
+			del sys.argv[1]
+		elif sys.argv[1][:2] == "-s" and len(sys.argv[1]) > 2:
+			value_whitespace = sys.argv[1][2:]
+			del sys.argv[1]
+		elif sys.argv[1][:2] == "-n" and len(sys.argv[1]) > 2:
+			null_padding = sys.argv[1][2:]
+			del sys.argv[1]
+		elif len(sys.argv[1]) < 2 or sys.argv[1][0] != '-':
+			break;
+		else:
+			error("an unknown option is specified.")
+
+	input_file = open_file(1)
+	input_object = json.loads(input_file.read(), object_pairs_hook=OrderedDict)
+
+	fields_of_object(input_object)
+
+	sys.exit(0)

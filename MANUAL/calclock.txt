@@ -1,0 +1,149 @@
+Tukubai online command manual
+
+calclock
+
+【name】
+
+calclock : Calculates date and time (calendar clock)
+
+[Format]
+
+Usage : calclock [-r] [<f1> <f2> <f3> ...] <file>
+Version : Sat Aug 20 22:29:15 JST 2022
+Edition: 1
+
+【explanation】
+
+This tool takes a date strings from specified fields in a file read
+in from a specified file or standard input, and add the number of
+seconds since 1 Jan 1970 (UNIX Time).  Used to convert dates or
+times to decimal number in order to perform calculations on them.
+
+The date string must be in one of the following three formats:
+YYYYMMDD (8 digits), YYYYMMDDhhmm (12 digits) or YYYYMMDDhhmmss (14
+digits).
+
+The converted value can be further converted to minutes by dividing
+by 60, to hours by dividing by 3600 or to days by dividing by 86400.
+
+If -r option is specified, reverse conversion (UNIX Time to
+YYYYMMDDhhmm conversion) is performed.
+
+If --dst option is specified, conversion is performed considering
+daylight saving time.
+
+
+【caution】
+Input file <file> cannot be omitted
+Field specification If <f1> <f2> <f3>... is omitted, all fields are specified.
+If there is 0 in field specification <f1> <f2> <f3>..., all fields are specified.
+At this time, even if there are field specifications other than 0 at the same time, they are ignored.
+
+【Example 1】
+
+$ cat data
+0001 0000007 20060201 20060206 117 8335 -145
+0001 0000007 20060203 20060206 221 15470 0
+0001 0000007 20060205 20060206 85 5950 0
+0001 0000007 20060206 20060206 293 20527 -17
+0001 0000007 20060207 20060206 445 31150 0
+0002 0000007 20060208 20060206 150 11768 -1268
+0002 0000007 20060209 20060206 588 41160 0
+0002 0000007 20060210 20060206 444 31080 0
+$
+
+Convert the 3rd and 4th fields, calculate the time difference
+between the two and express the result in number of days.
+
+$ calclock 3 4 - < data |
+tee data2 |
+awk '{print ($6-$4)/86400}' > data3
+
+$ cat data2
+0001 0000007 20060201 1138752000 20060206 1139184000 117 8335 -145
+0001 0000007 20060203 1138924800 20060206 1139184000 221 15470 0
+0001 0000007 20060205 1139097600 20060206 1139184000 85 5950 0
+0001 0000007 20060206 1139184000 20060206 1139184000 293 20527 -17
+0001 0000007 20060207 1139270400 20060206 1139184000 445 31150 0
+0002 0000007 20060208 1139356800 20060206 1139184000 150 11768 -1268
+0002 0000007 20060209 1139443200 20060206 1139184000 588 41160 0
+0002 0000007 20060210 1139529600 20060206 1139184000 444 31080 0
+
+$ cat data3
+Five
+3
+1
+0
+-1
+-2
+-3
+-Four
+$
+
+[Example 2]
+
+-r option(reverse conversion):
+The value in the specified field which expresses the number of
+seconds since 1 Jan 1970 (UNIX Time) is converted to a 14-digit
+number in the format YYYYMMDDhhmmss.  
+If you want to format only the date, cut out the upper 8 digits with 
+substr, self or awk after output.
+
+$ cat data
+0001 0000007 20060201 117 8335 -145
+0001 0000007 20060203 221 15470 0
+0001 0000007 20060205 85 5950 0
+0001 0000007 20060206 293 20527 -17
+0001 0000007 20060207 445 31150 0
+0002 0000007 20060208 150 11768 -1268
+0002 0000007 20060209 588 41160 0
+0002 0000007 20060210 444 31080 0
+$
+
+To find the date 3 days after each day in the 3rd field, run the command as follows:
+
+$ calclock 3 data |
+awk '{print $4+86400*3}' |
+tee data2 |
+calclock -r 1 - |
+tee data3 |
+self 2.1.8 > data4
+
+$ cat data2
+1138978800
+1139151600
+1139324400
+1139410800
+1139497200
+1139583600
+1139670000
+1139756400
+
+$ cat data3
+1138978800 20060204000000
+1139151600 20060206000000
+1139324400 20060208000000
+1139410800 20060209000000
+1139497200 20060210000000
+1139583600 20060211000000
+1139670000 20060212000000
+1139756400 20060213000000
+
+$ cat data4
+20060204
+20060206
+20060208
+20060209
+20060210
+20060211
+20060212
+20060213
+$
+
+【Related item】
+
+dayslash, mdate, yobi
+
+last modified: Sat Aug 20 22:29:15 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

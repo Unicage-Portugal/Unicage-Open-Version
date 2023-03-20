@@ -1,0 +1,364 @@
+#!/usr/bin/env python
+#coding: utf-8
+#
+# mojihame 変数はめ込みツール（Open usp Tukubai版）
+# 
+# designed by Nobuaki Tounaka
+# written  by Masatomo Togashi
+#
+# The MIT License
+#
+# Copyright (C) 2020 Universal Shell Programming Laboratory
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+from __future__ import print_function
+
+_usage = "mojihame <template> <data>            (通常)"
+_usage1 = "mojihame -l <label> <template> <data> (行単位)"
+_usage2 = "mojihame -h <label> <template> <data> (階層データ)"
+_option = " -d[c]"
+_version = "Tue Oct 20 15:17:47 JST 2020"
+_code = "Open usp Tukubai (LINUX+FREEBSD/PYTHON2.4/UTF-8)"
+
+# 濁音と半濁音のNFD表記でNFC表記もできるもの→NFDtoNFC変換でNFCに統一する
+_comb_pat=r"(((う|か|き|く|け|こ|さ|し|す|せ|そ|た|ち|つ|て|と|は|ひ|ふ|へ|ほ|ウ|カ|キ|ク|ケ|コ|サ|シ|ス|セ|ソ|タ|チ|ツ|テ|ト|ハ|ヒ|フ|ヘ|ホ|ワ|ヰ|ヱ|ヲ)゙)|((は|ひ|ふ|へ|ほ|ハ|ヒ|フ|ヘ|ホ)゚))+"
+
+import re
+import os
+import sys
+import unicodedata
+
+def error(msg, *arg):
+	print('Error[mojihame] :', msg % arg, file=sys.stderr)
+	sys.exit(1)
+
+def usage():
+	print("Usage   :", _usage, file=sys.stderr)
+	print("        :", _usage1, file=sys.stderr)
+	print("        :", _usage2, file=sys.stderr)
+	print("Option  :", _option, file=sys.stderr)
+	print("Version :", _version, file=sys.stderr)
+	print("         ", _code, file=sys.stderr)
+	sys.exit(1)
+
+#
+# 入力ファイルオープン
+#
+def open_file(n):
+	if n >= len(sys.argv):	filename = '-'
+	else:
+		filename = sys.argv[n]
+	if filename == '-':	filename = '/dev/fd/0'	# sys.stdinをファイルディスクリプターで表記する
+	if Python3():	mode='r'
+	else:	mode='rU'	# Python2ではmodeがrUのときPython3と同様に読み込み時に各種改行記号がLF（\n）に統一される
+	try:
+		file = open(filename, mode)
+	except:
+		if filename=='/dev/fd/0':
+			error("標準入力ファイルをオープンできません。")
+		else:
+			error("ファイル '%s' をオープンできません。", filename)
+	return file
+
+# BOMの取得関数
+def get_BOM():
+	if Python3():	return chr(int("FEFF",16))	# U+FEFFはBOMのUnicode符号位置
+	else:			return "\xEF\xBB\xBF"	# BOMは「EF BB BF」の3バイト
+
+# BOMの削除関数
+def rm_BOM(line):
+	global firstline
+	if not firstline: return line
+	firstline=False
+	if line.startswith(get_BOM()):	line=line[len(get_BOM()):]	# 行頭にBOMがあったらBOMを削除する
+	return line
+
+# Python3か判定する
+def Python3():
+	if sys.version_info >= (3, 0):
+		return True
+	else:
+		return False
+
+#
+# unicode 変換
+#
+def to_unicode(s):
+	if type(s)==type(U""): return s	# 入力文字列がUnicode文字列のとき
+	try:
+		return unicode(s, 'utf_8')
+	except:
+		error("不当なマルチバイト文字が含まれています。")
+
+#
+# utf8 変換
+#
+def to_utf8(s):
+	try:
+		return s.encode('utf-8')
+	except:
+		error("内部エラー UTF8への変換に失敗しました。")
+
+#
+# NFDtoNFC()のre.sub()から指定patternがみつかるごとに呼ばれるのでNFD/NFC変換をして返す
+# 置換対象パターンはNFD文字:全角ひらがな/全角カタカナの清音に結合用濁点/結合用半濁点を連接したもの
+# 置換先文字はNFC文字:全角ひらがな/全角カタカナの濁音/半濁音
+#
+def replace(matchobj):
+	if Python3():	return unicodedata.normalize('NFC',matchobj.group(0))
+	else:	return to_utf8(unicodedata.normalize('NFC',to_unicode(matchobj.group(0))))	# Python2ではutf8→unicdoe→utf8の変換をする
+
+#
+# 全角ひらがな/全角カタカナの濁音/半濁音のNFC化
+#
+def NFDtoNFC(str):
+	# 全角ひらがな/全角カタカナの濁音/半濁音をNFCで統一して返す
+	return re.sub(pattern,replace,str)
+
+#
+# 置換文字列の正規化
+#
+def canon(s, null):
+	r = re.compile(r'(^|[^\\])_')
+	s = re.sub(r'\\_', '_', r.sub(r'\1 ', r.sub(r'\1 ', s)))
+	if s == null:
+		return ''
+	else:
+		return s
+
+#
+# 置換して出力
+#
+def repl_put(body, data):
+	data = NFDtoNFC(data)	# dataに対してNFDtoNFC変換をする
+	data = [ canon(x, null) for x in re.split(r'[ \n]+', data) if x ]
+	sys.stdout.write(body[0])
+	for x in body[1:]:
+		r = re.match(r'(\d*)(.*)', x, re.DOTALL)
+		n = int(r.group(1) or 0)
+		if n:
+			sys.stdout.writelines(data[n - 1:n])
+		else:
+			sys.stdout.write('%' + r.group(1))
+		sys.stdout.write(r.group(2))
+
+#
+# キー位置を求める
+#
+def keylist(tmpl):
+	return [ int(x) for x in re.findall(r'%(\d*[1-9]0*)', ''.join(tmpl)) ]
+
+#
+# キーの抽出
+#
+def getkey(data, keylist):
+	data = [ x for x in re.split(r'[ \n]+', data) if x ]
+	data = [ data[x - x:x] and data[x - x:x][0] or '' for x in keylist ]
+	return ' '.join(data)
+
+#
+# データをキーで分割
+#
+def split_data(data, keylist):
+	oldkey = None
+	block = []
+	for d in data:
+		key = getkey(d, keylist)
+		if key != oldkey:
+			block += [ [] ]
+			oldkey = key
+		block[-1] += [ d ]
+	return block
+
+#
+# 階層データ
+#
+def do_hier(tmpl, label, data, top):
+	lab = [ label in x for x in tmpl ]
+	if not(max(lab)):
+		if top:
+			error("<template> ラベル '%s' がありません。", label);
+		body = ''.join(tmpl).split('%')
+		for d in data:
+			repl_put(body, d)
+		return
+	ls = lab.index(True)
+	lab.reverse()
+	le = len(lab) - 1 - lab.index(True)
+	if top:
+		sys.stdout.writelines(tmpl[:ls])
+		do_hier(tmpl[ls + 1:le], label, data, False)
+		sys.stdout.writelines(tmpl[le + 1:])
+	else:
+		head = tmpl[:ls]
+		body = tmpl[ls + 1:le]
+		tail = tmpl[le + 1:]
+		for blk in split_data(data, keylist(head + tail)):
+			repl_put(''.join(head).split('%'), blk[0])
+			# sys.stdout.writelines(blk)  XXX
+			do_hier(body, label, blk, False)
+			repl_put(''.join(tail).split('%'), blk[0])
+
+#
+# 直接入力文字列の前処理
+#
+#  Python3においてコマンドラインからの直接入力文字列中にUnicode符号位置がU+FFFFを超えるコードがあると
+#  Unicode文字に正しく変換されない場合があることへの対処をする
+def utf2ucs(instr):
+	outstr=""	# 出力文字列
+	intlist=[]	# 作業用整数リスト
+	for char in instr:
+		if ord(char)>=0xdc00 and ord(char)<=0xdcff:	# 文字の符号位置がU+DCxxの範囲にあったら「UTF8もどき」
+			intlist.append(ord(char)-0xdc00)	# 0xdc00のげたをはずして整数リストに入れる
+		else:	# 通常文字がきたら
+			if len(intlist)>0:	# ここまでに「UTF8もどき」列を変換した整数リストがあったら
+				# bytesに変換してutf8からUCSへの変換をして出力文字列に追加
+				outstr+= bytes(intlist).decode("utf_8")
+				intlist=[]	# 整数リストを再初期化
+			outstr+=char	# 新しくきた通常文字を出力文字列に追加
+	# 「UTF8もどき」列を変換した整数リストが残っていたら
+	# bytesに変換してutf8からUCSへの変換をして出力文字列に追加
+	if len(intlist)>0:	outstr+= bytes(intlist).decode("utf_8")
+	return outstr
+
+#
+# メイン関数
+#
+if __name__ == '__main__':
+
+	if len(sys.argv) <= 1 \
+	 or sys.argv[1] == '--help' \
+	 or sys.argv[1] == '--version':
+		usage()
+
+	#
+	# NFD文字（清音+結合用濁点/結合用半濁点）検出のための正規表現パターンを準備
+	#
+	pattern=re.compile(_comb_pat)
+
+	#
+	# オプション
+	#  d::l:: が使えないので getopt は使えない
+	#
+	mode, label, null = '', '', '@'
+	while len(sys.argv) > 1:
+		if sys.argv[1][:2] == '-d':
+			null = sys.argv[1][2:]
+			del(sys.argv[1])
+		elif sys.argv[1][:2] == '-h':
+			if len(sys.argv[1]) > 2:
+				label = sys.argv[1][2:]
+			elif len(sys.argv) > 2:
+				label = sys.argv[2]
+				del(sys.argv[2])
+			else:
+				usage()
+			if not label:
+				error("ラベルが空文字列です。")
+			mode += 'h'
+			del(sys.argv[1])
+		elif sys.argv[1][:2] == '-l' or sys.argv[1] == '-r':
+			label = sys.argv[1][2:]
+			mode += 'l'
+			del(sys.argv[1])
+		elif sys.argv[1][0] == '-' and len(sys.argv[1]) > 1:
+			error("不明なオプション(%s)です。", sys.argv[1])
+		else:
+			break
+	if len(mode) > 1:
+		error("-l/-r/-h は１回しか指定できません。")
+
+	if len(sys.argv) < 2:
+		usage()
+
+	if null != '@':	# null文字列がdefaultの「@」から変更されているとき（-d@のときは対処は不要）
+		if Python3():	null=utf2ucs(null)	# Python3のときは直接入力文字列の前処理をする（-d@のときは直接入力文字列について問題は発生しない）
+		null=NFDtoNFC(null)	# null文字列に対してNFDtoNFC変換をする
+
+	#
+	# 入力ファイルオープン
+	#
+	tmpl = open_file(1)
+	data = open_file(2)
+
+	#
+	# 通常
+	#
+	if mode == '':
+		firstline=True
+		tmpldata=rm_BOM(tmpl.read())	# ファイル先頭に対してBOM削除をする
+		firstline=True
+		datadata=rm_BOM(data.read())	# ファイル先頭に対してBOM削除をする
+		repl_put(tmpldata.split('%'), datadata)
+
+	#
+	# 行単位
+	#
+	elif mode == 'l':
+		firstline=True
+		t = tmpl.readlines()
+		t[0]=rm_BOM(t[0])	# 先頭行に対してBOM削除をする
+		if label:
+			lab = [ label in x for x in t ]
+			#
+			# ラベルが <template> にない場合はそのまま出力
+			#
+			if not max(lab):
+				sys.stdout.writelines(t)
+				sys.exit(0)
+			n = lab.index(True)
+			head = t[:n]
+			if max(lab[n + 1:]):
+				m = lab[n + 1:].index(True)
+				body = t[n + 1: n + m + 1]
+				tail = t[n + m + 2:]
+			else:
+				body = t[n + 1:]
+				tail = []
+		else:
+			head, body, tail = [], t, []
+		body = ''.join(body).split('%')
+		sys.stdout.writelines(head)
+		firstline=True
+		for d in data:
+			d=rm_BOM(d)	# 先頭行に対してBOM削除をする
+			repl_put(body, d)
+		sys.stdout.writelines(tail)
+
+	#
+	# 階層データ
+	#
+	else:
+		t = tmpl.readlines()
+		firstline=True
+		t[0]=rm_BOM(t[0])	# 先頭行に対してBOM削除をする
+		lab = [ label in x for x in t ]
+		if not(max(lab)):
+			error("<template> ラベル '%s' がありません。", label);
+		ls = lab.index(True)
+		lab.reverse()
+		le = len(lab) - 1 - lab.index(True)
+		key = keylist(t[:ls] + t[le + 1:])
+		datalines=data.readlines()
+		firstline=True
+		datalines[0]=rm_BOM(datalines[0])	# 先頭行に対してBOM削除をする
+		do_hier(t, label, datalines, True)
+
+	sys.exit(0)
