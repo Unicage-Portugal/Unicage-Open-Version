@@ -1,0 +1,84 @@
+Tukubai online command manual
+
+divsen
+
+【name】
+
+divsen : divide the specified field by 1,000
+
+[Format]
+
+Usage : divsen [-s] [<f1> <f2> ...] [<file>]
+Version : Sat Aug 20 22:29:15 JST 2022
+
+【explanation】
+
+Divides the numeric value of the argument file or standard input text data by 1,000 and outputs it.
+
+It is used when creating a table in units of thousands. 
+Specify each field in turn to divide by 1,000 in the argument. 
+In addition, the numerical value after the decimal point is rounded off. 
+
+If the -s option is specified, the decimal point value is output as is without rounding.
+
+Specify - as <file> or omit it to use standard input.
+
+Field specification If <f1> <f2> ... is omitted, all fields are specified.
+
+If there is even one 0 in field specification <f1> <f2> ..., all fields are specified.
+
+When the command input is "divsen -s", all fields are divided from the standard input by 1,000 and
+displayed without rounding off decimals. 
+
+When the command input is "divsen", the syntax of the command is displayed and exits.
+
+
+【Example 1】
+
+$ cat data
+20060201 296030 6710000
+20060202 1300100 3130000
+20060203 309500 20100
+20060204 16300 300100
+20060205 41000 210000
+20060206 771100 400000
+
+$ divsen 2 3 data 	← Divide 2 and 3 fields by 1,000
+20060201 296 6710
+20060202 1300 3130
+20060203 310 20
+20060204 16 300
+20060205 41 210
+20060206 771 400
+
+Specify -s to display up to the decimal point. These data will be processed later using marume. 　
+
+$ divsen -s 2 3 data 	← display up to the decimal point
+20060201 296.030 6710.000
+20060202 1300.100 3130.000
+20060203 309.500 20.100
+20060204 16.300 300.100
+20060205 41.000 210.000
+20060206 771.100 400.000
+
+
+【Note】
+
+If you pipe the divsen result and execute divsen, you can create a million units of data.
+
+
+【caution】
+
+Be careful when omitting <file>
+If the last parameter is "the name of an existing file", this is the input file specification, 
+otherwise it is processed as a field specification, and the standard input is assumed,
+as the input file specification is omitted.
+
+
+【Related item】
+
+marume
+
+last modified: Sat Aug 20 22:29:15 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

@@ -1,0 +1,117 @@
+Tukubai online command manual
+
+rank
+
+【name】
+
+rank : add rank to rows
+
+[Format]
+
+Usage : rank ref=<ref> key=<key> <file>
+Version : Tue Oct 20 15:17:47 JST 2020
+Edition: 1
+
+【Explanation】
+
+Add rank to each line of file. If the reference key field is specified with ref=<ref>, 
+the rank is initialized to 1 when the reference key field changes. 
+If you specify a value field with key=<key>, add the same number of ranks while the value 
+is the same. 
+
+If - is specified as <file>, standard input is used.
+If there is a ref= specification or a key= specification, omit <file> and use the standard input.
+
+
+[Example 1] Basic pattern
+
+With no arguments, it simply adds line numbers.
+
+$ cat data
+JPN Sugiyama______ 26
+JPN Sakimura______ 27
+JPN Kajikawa______ 27
+JPN Yanagimoto______ 30
+USA BOB_______ 25
+USA GEORGE____ 29
+USA SAM_______ 29
+USA TOM_______ 35
+
+$ rank data
+1 JPN Sugiyama______ 26
+2 JPN Sakimura______ 27
+3 JPN Kajikawa______ 27
+4 JPN Yanagimoto______ 30
+5 USA BOB_______ 25
+6 USA GEORGE____ 29
+7 USA SAM_______29
+8 USA TOM_______ 35
+
+
+[Example 2] Specifying ref=
+
+When specifying a reference field with ref=<ref>, the rank is initialized to 1 at the line 
+where the reference field changes. It is also possible to specify continuous/discrete fields 
+such as ref=1/2 ref=3@2/5.
+
+$ rank ref=1 data
+1 JPN Sugiyama______ 26
+2 JPN Sakimura______ 27
+3 JPN Kajikawa______ 27
+4 JPN Yanagimoto______ 30
+1 USA BOB_______ 25
+2 USA GEORGE____ 29
+3 USA SAM_______29
+4 USA TOM_______ 35
+
+
+[Example 3] key specification
+
+You can specify a value field as "key=<key>".  In this case, records
+where the key field has the same value are assigned the same line
+number.  Line numbers are skipped so that the following lines are
+numbered properly.  You can specify contiguous or non-contiguous
+value fields with reference fields like syntax.
+
+$ rank key=3 data
+1 JPN Sugiyama______ 26
+2 JPN Sakimura______ 27
+2 JPN Kajikawa______ 27
+4 JPN Yanagimoto______ 30
+5 USA BOB_______ 25
+6 USA GEORGE____ 29
+6 USA SAM_______29
+8 USA TOM_______ 35
+
+
+[Example 4] ref and key specification
+
+Where the reference key changes, the line number is initialized, and lines with the same 
+value field have the same rank added.
+
+$ rank ref=1 key=3 data
+1 JPN Sugiyama______ 26
+2 JPN Sakimura______ 27
+2 JPN Kajikawa______ 27
+4 JPN Yanagimoto______ 30
+1 USA BOB_______ 25
+2 USA GEORGE____ 29
+2 USA SAM_______29
+4 USA TOM_______ 35
+
+
+【caution】
+
+If the input file is - or not specified, data from standard input is used.
+
+Whether or not to add the same number of floors is determined based on whether the values 
+are the same as character strings, not as numbers.
+
+
+【Related item】
+
+count, gyo, juni, retu
+
+last modified: Thu Aug 11 10:01:38 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

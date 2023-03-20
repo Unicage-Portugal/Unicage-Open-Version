@@ -1,0 +1,32 @@
+Tukubai online command manual
+
+numchar
+
+【name】
+
+numchar : Read a string from standard input and convert it to a numeric character reference.
+
+[Format]
+
+Usage : numchar
+Version : Tue Feb 19 23:38:53 JST 2019
+Edition: 1
+
+【Explanation】
+
+Converts a string input from standard input to a numeric character reference.
+
+
+【Example 1】
+
+$ echo "We are aliens." | numchar
+&#x6211;&#x3005;&#x306f;&#x5b87;&#x5b99;&#x4eba;&#x3060;&#x3002;
+
+
+【comment】
+
+This command is made for "shell script rapid development method".
+
+last modified: Mon Aug 8 10:24:30 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

@@ -1,0 +1,64 @@
+Tukubai online command manual
+
+maezero
+
+【name】
+
+maezero : add a leading zero
+
+[Format]
+
+Usage : maezero <f1.w1> <f2.w2> .. <file>
+Option : --ngthrough <str>
+Version : Sat Jun 20 21:57:21 JST 2020
+Edition: 1
+
+【Explanation】
+
+Perform leading zero padding with the specified number of digits in the specified field 
+of the argument file or standard input file.
+
+If the content of the specified field is the string specified by the --ngthrough option, 
+no leading zero padding is performed.
+
+Consecutive fields can be specified and you can use NF or NF-<n> to specify fields.
+
+【Example 1】
+
+$ cat data
+12 345 6789
+
+$ maezero 1.5 2.6 data
+00012 000345 6789
+
+
+[Example 2]
+--ngthrough option
+
+$ maezero --ngthrough 345 1.5 2.6 data
+00012 345 6789
+
+
+[Example 3]
+
+$ maezero 1.6/3.6 data
+000012 000345 006789
+
+
+[Example 4]
+
+$ maezero NF-1.6 data
+12 000345 6789
+
+
+【remarks】
+
+The maezero command does not check anything about the contents of the fields. 
+Also, if the length of the field already exceeds the specified number of digits, 
+the field is not processed. 
+Note that the specified fields must be in ascending order.
+
+
+last modified: Fri Jul 15 15:42:38 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

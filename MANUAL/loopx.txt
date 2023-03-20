@@ -1,0 +1,57 @@
+Tukubai online command manual
+
+loopx
+
+【name】
+
+loopx : Concatenates by all possible combinations
+
+[Format]
+
+Usage : loopx <file1> <file2> ...
+Version : Thu Jan 12 18:35:55 JST 2012
+Edition: 1
+
+【Explanation】
+
+For each line of multiple files, all patterns are multiplied, concatenated, and output. 
+
+The output is multiplied by lines in the order of the specified files. 
+Each line of <file1> is multiplied by the line of <file2>, and each line of the result 
+is multiplied by the line of <file3>.
+
+
+【Example 1】
+
+Multiplying files data1, data2, and data3 results in the following:
+
+$ cat data1
+1 Agriculture
+2 Industry
+
+$ cat data2
+A Tokyo
+B Osaka
+
+$ cat data3
+Sunny
+Rain
+
+$ loopx data1 data2 data3
+1 Agriculture A Tokyo Sunny
+1 Agriculture A Tokyo Rain
+1 Agriculture B Osaka Sunny
+1 Agriculture B Osaka Rain
+2 Industry A Tokyo Sunny
+2 Industry A Tokyo Rain
+2 Industry B Osaka Sunny
+2 Industry B Osaka Rain
+
+
+【Related item】
+
+join0, join1, join2, loopj, up3
+
+last modified: Fri Jul 15 15:42:38 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

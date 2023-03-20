@@ -1,0 +1,74 @@
+Tukubai online command manual
+
+up3
+
+【name】
+
+up3 : merge two files with same key field
+
+[Format]
+
+Usage : up3 key=<key> <master> [<tran>]
+Version : Fri Nov 20 17:00:13 JST 2020
+Edition: 1
+
+【explanation】
+
+The key field specified as key=<pos> of each record of the
+transaction file passed as argument <tran> (or standard input)
+is compared to the same field of the master file <master>,
+and where the keys match the records from the transaction file
+are inserted below the matching record in the master file. 
+Key fields in both master and tran must be aligned.
+If you omit the tran specification, the input will be from the standard input (stdin).
+
+
+【Example 1】
+
+$ cat master 	← Data from 1st to 3rd day
+Store_A Day_1 103 62 
+Store_A Day_2 157 94
+Store_A Day_3 62 30
+Store_B Day_1 210 113
+Store_B Day_2 237 121
+Store_B Day_3 150 82
+Store_C Day_1 81 52
+Store_C Day_2 76 49
+Store_C Day_3 38 21
+
+$ cat tran 	← Data from 4th to 5th day
+Store_A Day_4 131 84
+Store_A Day_5 189 111
+Store_B Day_4 198 105
+Store_B Day_5 259 189
+Store_C Day_4 81 48
+Store_C Day_5 98 61
+
+$ up3 key=1 master tran
+Store_A Day_1 103 62 
+Store_A Day_2 157 94
+Store_A Day_3 62 30
+Store_A Day_4 131 84 ←Store_A of tran is under Store_A of master
+Store_A Day_5 189 111
+Store_B Day_1 210 113
+Store_B Day_2 237 121
+Store_B Day_3 150 82
+Store_B Day_4 198 105
+Store_B Day_5 259 189
+Store_C Day_1 81 52
+Store_C Day_2 76 49
+Store_C Day_3 38 21
+Store_C Day_4 81 48
+Store_C Day_5 98 61
+
+
+When specifying multiple key fields, specify them by connecting them with @ like key=2@1.
+If you want to specify multiple contiguous key fields, you must join them with a "/" as in "key=3/7".
+
+【Related item】
+
+join0, join1, join2, loopj, loopx
+
+last modified: Fri Jul 15 16:27:21 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

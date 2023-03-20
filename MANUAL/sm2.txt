@@ -1,0 +1,114 @@
+Tukubai online command manual
+
+sm2
+
+【name】
+
+sm2 : Sums values by key
+
+[Format]
+
+Usage : sm2 [+count] <k1> <k2> <s1> <s2> [<file>]
+Version : Fri Jul 29 15:32:20 JST 2022
+
+【explanation】
+
+Sums each field of records that have the same key within <file>.
+Aggregates each field from the field specified by s1 to the field specified by s2 using the field 
+specified by k1 to the field specified by k2 as a key. 
+Rows with the same key are aggregated into one row and output. 
+Note that fields that are not specified in either the key or summary field range will 
+not be output.
+
+
+【Example 1】
+
+$ cat data	← File structure 1:Store_number 2:Store_name 3:Date 4-8:Product_sales
+0001 Shimbashi 20060201 91 59 20 76 54 
+0001 Shimbashi 20060202 46 39 8 5 21
+0001 Shimbashi 20060203 82 0 23 84 10
+0002 Ikebukuro 20060201 30 50 71 36 30
+0002 Ikebukuro 20060202 78 13 44 28 51
+0002 Ikebukuro 20060203 58 71 20 10 6
+0003 Shinjuku 20060201 82 79 16 21 80
+0003 Shinjuku 20060202 50 2 33 15 62
+0003 Shinjuku 20060203 52 91 44 9 0
+0004 Ueno 20060201 60 89 33 18 6
+0004 Ueno 20060202 95 60 35 93 76
+0004 Ueno 20060203 92 56 83 96 75
+
+Output the total number of sales for each store. 
+Aggregate the 4th to 8th fields using the 1st to 2nd fields as keys.
+
+$ sm2 1 2 4 8 data
+0001 Shimbashi 219 98 51 165 85
+0002 Ikebukuro 166 134 135 74 87
+0003 Shinjuku 184 172 93 45 142
+0004 Ueno 247 205 151 207 157
+
+
+[Example 2]
+
+The +count option aggregates for each key, and at the same time inserts and outputs the number 
+of rows for each key in the original data immediately after the key.
+
+$ cat data
+1111 3
+1111 5
+1111 2
+2222 3
+2222 10
+3333 4
+3333 8
+3333 9
+3333 6
+
+Output lines with the same key.
+
+$ sm2 +count 1 1 2 2 data
+1111 3 10
+2222 2 13
+3333 4 27
+
+
+[Example 3]
+
+If sm2 has a decimal point, it outputs the number with the highest precision for each key 
+and each field.
+
+$ cat data3
+a 1.4 2.55
+a 2 4
+b 1.33 2.1
+b 5.222 3.12
+
+$ sm2 1 1 2 3 data3
+a 3.4 6.55
+b 6.552 5.22
+
+
+[Example 4]
+
+Specifying a key of 0 0 will output the grand total of the summary field.
+
+$ cat data4
+a 1
+b 2
+c 3
+
+$ sm2 0 0 2 2 data4
+6
+
+
+Execute the following command to total the size of the files in the specified directory.
+
+$ ls -l directory | sm2 0 0 5 5
+
+
+【Related item】
+
+kasan, plus, ratio, sm4, sm5, ysum
+
+last modified: Fri Oct 21 08:21:02 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

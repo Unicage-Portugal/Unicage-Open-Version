@@ -1,0 +1,33 @@
+Tukubai online command manual
+
+extname
+
+【name】
+
+extname : extract suffix from pathname
+
+[Format]
+
+Usage : extname <pathname>
+Version : Sun Aug 19 10:16:04 JST 2007
+Edition: 1
+
+【explanation】
+
+The extname command outputs the suffix from the specified <pathname>.
+
+[Example 1]
+
+$ extname /home/usp/hogehoge.c
+c
+
+【reference】
+
+basename command = remove the path and extract only the file name
+dirname command = Extract only the directory name from the path
+rootname command = remove suffix from path (USP command)
+extname command = extract suffix from path (USP command)
+
+last modified: Sat Aug 13 12:25:02 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

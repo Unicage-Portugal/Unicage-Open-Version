@@ -1,0 +1,47 @@
+Tukubai online command manual
+
+exist
+
+【name】
+
+exist : Checks if all files exist
+
+[Format]
+
+Usage : exist [-v] <file1> <file2> ...
+Version : Fri Oct 21 11:26:06 JST 2011
+Edition: 1
+
+【explanation】
+
+Exits normally if every file <file1> <file2> ... exists, otherwise
+it exits with an error.
+
+If -v option is specified, filnames which is not exist are printed
+to stderr.
+
+
+[Example 1]
+
+$ touch file.{1..5}
+$ exist file.{1..5} && echo ok > result
+$ cat result
+OK
+
+[Example 2]
+
+$ touch file.{1..5}
+$ exist file.{1..6} || echo ng > result 	<-- error because file.6 does not exist
+$ cat result
+ng
+
+[Example 3]
+
+If wildcard expansion succeeds, exit normally.
+$ touch a {1..5}
+$ exist a* && echo ok > result 	<-- success if file name starts with "a"
+$ cat result
+
+last modified: Sat Aug 13 12:25:02 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

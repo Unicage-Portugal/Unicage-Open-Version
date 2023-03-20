@@ -1,0 +1,168 @@
+Tukubai online command manual
+
+self
+
+【name】
+
+self : Outputs the data from the specified fields
+       self = select fields
+
+[Format]
+
+Usage : self <f1> <f2> ... [<file>]
+         : self -d <f1> <f2> ... <string>
+Version : Sat Aug 20 22:29:15 JST 2022
+
+【explanation】
+
+Outputs the data from the specified field in <file>.
+If <file> is not specified or is "-" then the command reads from
+standard input.
+
+<Options>
+-d : Direct Mode
+     Executes the self command on "<string>"
+
+
+【Example 1】
+
+Extract and output the 4th and 2nd fields of the text data.
+
+$ cat data
+0000000 Hamachi______ 50 F 91 59 20 76 54
+0000001 Suzuta______ 50 F 46 39 8 5 21
+0000003 Sugiyama______ 26 F 30 50 71 36 30
+0000004 Shirato______ 40 M 58 71 20 10 6
+0000005 Sakimura______ 50 F 82 79 16 21 80
+
+$ self 4 2 data
+F Hamachi______
+F Suzuta______
+F Sugiyama______
+M Shirato______
+F Sakimura______
+
+
+[Example 2]
+
+self can also extract and output the part in the field. 
+The processing is the same as the substr function of awk.
+
+Outputs a substring of the first field beginning with the fourth character.
+
+$ self 1.4 2 data
+0000 Hamachi______
+0001 Suzuta______
+0003 Sugiyama______
+0004 Shirato______
+0005 Sakimura______
+
+Outputs a substring from the first to the fourth character of the 2nd field.
+
+$ self 2.1.4 3 data
+Hamachi 50
+Suzuta 50
+Sugiyama 26
+Shirato 40
+Sakimura 50
+
+
+[Example 3]
+
+You can specify the entire line with 0.
+
+$ self 0 data
+0000000 Hamachi______ 50 F 91 59 20 76 54
+0000001 Suzuta______ 50 F 46 39 8 5 21
+0000003 Sugiyama______ 26 F 30 50 71 36 30
+0000004 Shirato______ 40 M 58 71 20 10 6
+0000005 Sakimura______ 50 F 82 79 16 21 80
+
+$ self 4 0 data
+F 0000000 Hamachi______ 50 F 91 59 20 76 54
+F 0000001 Suzuta______ 50 F 46 39 8 5 21
+F 0000003 Sugiyama______ 26 F 30 50 71 36 30
+M 0000004 Shirato______ 40 M 58 71 20 10 6
+F 0000005 Sakimura______ 50 F 82 79 16 21 80
+
+
+[Example 4]
+
+Consecutive fields can also be described.
+
+$ self 2/5 data
+Hamachi______ 50 F 91
+Suzuki______ 50 F 46
+Sugiyama______ 26 F 30
+Shirato______ 40 M 58
+Sakimura______ 50 F 82
+
+
+[Example 5]
+
+NF (number of fields in current line) can be used.
+
+$ self 1 NF-3 NF data
+0000000 59 54
+0000001 39 21
+0000003 50 30
+0000004 71 6
+0000005 79 80
+
+
+[Example 6]
+
+A field with multiple blanks can be reduced to a single blank.
+
+$ cat data2
+a   b
+c  d e
+
+$self 1/NF data2
+a b
+c d e
+
+
+[Example 7]
+
+Strings can be manipulated using direct mode.
+
+$ self -d 1.1.4 "20070401 12345"
+2007
+
+
+[Example 8]
+
+When specifying a substr with self, the first character is designated 1.
+$ echo ABCDEFGHIJ | self 1.3.4
+CDEF
+
+
+【Note】
+
+If the input file is not terminated with a newline character, that is, if the line is truncated, 
+a newline character is added at the end of the file to complete the line.
+
+When -d is not specified
+  -> Do not use files with numeric names.
+  -> Do not use files whose filename is entirely numeric.
+    If there exists a file whose filename is "10", then when you
+    run self 1 10 --> it will select the first field from the file
+    named "10" instead of selecting 1st fileld and 10th fileld from
+    standard input.
+    However, if you specify fields with only one digit (i.e. "2"), then
+    even if there is a file named "2" it will be ignored and "2" will
+    be considered the field designator.
+
+Also, in specifying character string extraction, if the cut or length does not match the 
+character delimiter, an error will occur.
+Specifying a starting position that is larger than the width of the field will result in an error.
+
+
+【Related item】
+
+delf
+
+last modified: Fri Oct 21 08:21:02 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

@@ -1,0 +1,74 @@
+Tukubai online command manual
+
+cjoin2x
+
+【name】
+
+cjoin2x : Join files that have multiple records with the same key value.
+
+[Format]
+
+Usage : cjoin2x [+<string>] key=<n> <master> <tran>
+Version : Thu Jun 20 18:01:27 JST 2019
+Edition: 1
+
+【explanation】
+
+Selects the rows in <tran> where the <n>th field
+in <tran> matches the first field in <master> and then
+inserts the information from <master>.
+For rows that do not match, dummy data "_" is output
+in place of each field in <master>. You can specify
+any dummy data.
+
+The difference with the cjoin2 command is you can have multiple
+records can exist with the same key value as the key field
+in the master file. The records in <master> and <tran> with
+the same value in the key field are merged and then output.
+
+The first field of <master> must be sorted in ascending order.
+
+It is an error if <master> is an empty file (0 bytes).
+
+
+[Example 1]
+
+$ cat master
+1 Tokyo 1
+1 Tokyo 2
+2 Osaka 1
+2 Osaka 2
+
+$ cat tran
+3 Sakae
+2 Kyobashi
+3 gold mine
+1 Ueno
+1 Shinjuku
+4 Tenjin
+2 Namba
+3 Atsuta
+2 Umeda
+4 Hakata
+
+$ cjoin2x key=1 master tran >data
+$ cat data
+3 _ Sakae
+2 Osaka 1 Kyobashi
+2 Osaka 2 Kyobashi
+3 _ Jinshan
+1 Tokyo 1 Ueno
+1 Tokyo 2 Ueno
+1 Tokyo 1 Shinjuku
+1 Tokyo 2 Shinjuku
+4 _ Tenjin
+2 Osaka 1 Namba
+2 Osaka 2 Namba
+3 _ Atsuta
+2 Osaka 1 Umeda
+2 Osaka 2 Umeda
+4 _ Hakata
+
+last modified: Fri Jul 15 16:38:58 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

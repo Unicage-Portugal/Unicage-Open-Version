@@ -1,0 +1,160 @@
+Tukubai online command manual
+
+rjson
+
+【name】
+
+rjson : convert JSON format files to field format
+
+[Format]
+
+Usage : rjson [-p<c>][-m<c>][-s<c>][-n<string>] [<json-file>]
+Version : Mon Sep 12 12:13:51 JST 2022
+Edition: 1
+
+【explanation】
+
+Make the file <json-file> in JSON format (RFC8259) into field format.
+The object name and list position are printed in nesting order, and the value is printed last.
+
+【option】
+
+-p : Change the separator between object names and list positions. Default is single-byte space.
+-m : Change single-byte spaces included in object names. The default is "_".
+-s : Change single-byte spaces included in the value. The default is "_".
+-n : Change null value (empty string). The default is "_".
+
+
+[Example 1]
+
+$cat jsondata
+{
+   "data1" : "null",
+   "data2" : "",
+   "data3" : null,
+   "data4" : true,
+   "data5" : false,
+   "data6" : "6.62607e-34"
+}
+
+$rjson jsondata
+data1 null
+data2_
+data3_
+data4 true
+data5 false
+data6 6.62607e-34
+
+
+[Example 2]
+
+$cat jsondata
+[
+{ "name" : "Alice Brown",
+   "sku" : "54321",
+   "price" : 199.95,
+   "shipTo" : { "name" : "Bob Brown",
+                "address" : "456 Oak Lane",
+                "city" : "Pretendville",
+                "state" : "",
+                "zip" : "98999" },
+   "billTo" : { "name" : "Alice Brown",
+                "address" : "456 Oak Lane",
+                "city" : "Pretendville",
+                "state" : "HI",
+                "zip" : "98999" }
+},
+{ "name" : "Donald Tramp",
+   "sku" : "24680",
+   "price" : 153.32,
+   "shipTo" : { "name" : "Kim Jonil",
+                "address" : "123 Hidroask",
+                "city" : "Pyonyan",
+                "state" : "NK",
+                "zip" : "10012" },
+   "billTo" : { "name" : "Donald Tramp",
+                "address" : "456 Oak Lane",
+                "city" : "Pretendville",
+                "state" : "HI",
+                "zip" : "98999" }
+}
+]
+
+$rjson < jsondata
+1 name Alice_Brown
+1 sku 54321
+1 price 199.95
+1 shipTo name Bob_Brown
+1 shipTo address 456_Oak_Lane
+1 shipTo city Pretendville
+1 shipTo state_
+1 shipTo zip 98999
+1 billTo name Alice_Brown
+1 billTo address 456_Oak_Lane
+1 billTo city Pretendville
+1 billTo state HI
+1 billTo zip 98999
+2 name Donald_Tramp
+2 sku 24680
+2 price 153.32
+2 shipTo name Kim_Jonil
+2 shipTo address 123_Hidroask
+2 shipTo city Pyonyan
+2 shipTo state NK
+2 shipTo zip 10012
+2 billTo name Donald_Tramp
+2 billTo address 456_Oak_Lane
+2 billTo city Pretendville
+2 billTo state HI
+2 billTo zip 98999
+
+$rjson -p.<jsondata
+1.name Alice_Brown
+1.sku 54321
+1.price 199.95
+1.shipTo.name Bob_Brown
+1.shipTo.address 456_Oak_Lane
+1.shipTo.city Pretendville
+1.shipTo.state_
+1.shipTo.zip 98999
+1.billTo.name Alice_Brown
+1.billTo.address 456_Oak_Lane
+1.billTo.city Pretendville
+1.billTo.state HI
+1.billTo.zip 98999
+2.name Donald_Tramp
+2.sku 24680
+2.price 153.32
+2.shipTo.name Kim_Jonil
+2.shipTo.address 123_Hidroask
+2.shipTo.city Pyonyan
+2.shipTo.state NK
+2.shipTo.zip 10012
+2.billTo.name Donald_Tramp
+2.billTo.address 456_Oak_Lane
+2.billTo.city Pretendville
+2.billTo.state HI
+2.billTo.zip 98999
+
+
+[Example 3]
+
+$ cat jsondata2
+[
+["a","b"],
+["c","d"]
+]
+
+$rjson jsondata2
+1 1a
+1 2b
+2 1c
+2 2d
+
+【Related item】
+
+wjson
+
+last modified: Thu Oct 27 16:33:08 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

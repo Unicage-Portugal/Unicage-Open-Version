@@ -1,0 +1,99 @@
+Tukubai online command manual
+
+ulock
+
+【name】
+
+ulock : exclusive control command
+
+[Format]
+
+Usage : ulock <lock-file>
+Usage : ulock -w <lock-file> [<counter-file>]
+           ulock -r <lock-file> <counter-file> <command>
+Option : --timeout=<sec>/--invalid=<sec>
+Version : Fri Jun 6 12:29:31 JST 2014
+Edition: 1
+
+【explanation】
+
+Using ulock <lock-file> (without -r/-w option) implements a completely exclusive zone.
+In this case, ulock will generate the <lock-file> exclusively.
+
+Using ulock -[OPTION] <lock-file> implements a read/write lock (depending on the option):
+ -> When using -w (write lock), ulock creates <lock-file> exclusively 
+and waits until link count of <counter-file> reaches 1.
+
+ -> When using -r (read lock), ulock increment the link count of
+<counter-file> by one if <lock-file> does not exist, at which time
+<command> is executed and the link count of <counter-file> is
+decremented by one after <command> finished successfully.  The link
+count is not decremented if <command> finished unsuccessfully.  
+In this case, following message is issued: 
+"Error(282)[ulock] : command '...' failed, file '...' is left."
+
+
+You can specify the maximum waiting time until command is started with the --timeout option. 
+Specify -1 to wait indefinitely. The default is -1 (wait indefinitely).
+
+Use the --invalid option to remove old lock files. Default is 60 seconds.
+
+
+[Example 1] Creating a completely exclusive section
+
+$ cat lock.sh
+#!/bin/bash
+ 
+if ulock lock;
+   #
+   # File processing, such as reading and writing
+   #
+   rm -f lock
+fi
+
+
+[Example 2] Implementation of read/write lock
+
+$ cat writelock.sh
+#!/bin/bash
+ 
+if ulock -w lock counter;
+ 
+   # Write process (example)
+   up3 key=1 mastertran > master.new
+   mv master. new master
+ 
+   rm -f lock
+fi
+
+$ cat readlock.sh
+#!/bin/bash
+ 
+ulock -r lock counter cat master
+
+
+[Remarks] Algorithm of read/write lock
+
+<Light lock>
+   X-- Take write lock. (atomic)
+   X-- Wait until counter 1.
+   --- write process
+   --- Release the write lock.
+
+<Read lock>
+   X-- Add 1 to the counter. (atomic)
+   X-- Ensure there is no write lock. If it is locked, decrement by 1 and return.
+   X-- read-only processing
+   X-- decrement counter by 1 (atomic)
+
+In ulock, write locks use the uniqueness of hardlink file generation, and counter operations 
+use the link (unique) number of hardlink files. 
+ulock implements the X part of the above algorithm.
+
+If both lock-file and counter-file are created on NFS, 
+read/write lock from each server will be realized.
+
+
+last modified: Fri Aug 12 12:56:05 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

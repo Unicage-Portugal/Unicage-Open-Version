@@ -1,0 +1,122 @@
+Tukubai online command manual
+
+cjoin2
+
+【name】
+
+cjoin2 : Join master file to transaction file (replace unmatched rows with dummy data)
+
+[Format]
+
+Usage : cjoin2 [-d<string>] [+<string>] key=<key> <master> [<tran>]
+Version : Fri May 20 21:16:07 JST 2022
+Edition: 1
+
+【explanation】
+
+Selects the rows in <tran> where the <n>th field in <tran> matches the first 
+field in <master> and then inserts all the fields in <master>, starting with the 
+second field, into the matching rows in <tran> beginning after the <n>th field.
+
+For non-matching rows in <tran>, dummy data is inserted for the 
+number of fields specified in "key".
+The dummy data is taken from the +<string> option. If this
+option is omitted, then the underscore character ("_") is used.
+
+If - is specified for master, the standard input is used as the master file. 
+If tran is not specified or - is specified, the standard input is the transaction file.
+
+The 1st field of master and the <n>th field of tran can be unaligned, and any number of 
+records can have the same value in the key field.
+
+Multiple fields can be specified as keys.
+<key> can be specified as:
+key=3     The third field in the transaction file
+key=3/5   The third, fourth and fifth field in the transaction
+          file (the first, second and third field in the master file)
+key=4@3   The fourth and third field in the transaction file
+          the second and first field in the master file)
+key=NF    Last field in the transaction file (first field in the
+          master file)
+key=NF-3  Third to last field in the transaction file (first field
+          in the master file)
+
+Field positions can be specified in the form NF or NF-x using NF, 
+which means number of fields in a line.
+
+If there is even one 0 in the key specification, it means that all fields are specified.
+
+In all cases, the master must be sorted for the specified key. 
+(The transaction file need not be sorted).
+
+If the "+ng" option is used then matching rows are sent to standard output and 
+non-matching rows are sent to the file descriptor specified in <fd>
+If <fd> is omitted, non-matching rows are output to standard error.
+
+If the keys of tran are aligned, they can be processed by join2 instead of cjoin2. 
+cjoin2 can handle misaligned keys in tran, but reading master all into memory can lead to
+memory allocation errors. cjoin2 can be used effectively when master is small and tran is large.
+
+
+[Example 1] Basic pattern
+
+$ cat master
+0000003 Sugiyama______ 26 F
+0000005 Sakimura______ 50 F
+0000007 Kajikawa______ 42 F
+
+$ cat tran
+0000005 82 79 16 21 80
+0000001 46 39 8 5 21
+0000004 58 71 20 10 6
+0000009 60 89 33 18 6
+0000003 30 50 71 36 30
+0000007 50 2 33 15 62
+
+$ cjoin2 key=1 master tran > ok
+$ cat ok
+0000005 Sakimura______ 50 F 82 79 16 21 80
+0000001 ********** ** * 46 39 8 5 21
+0000004 ********** ** * 58 71 20 10 6
+0000009 ********** ** * 60 89 33 18 6
+0000003 Sugiyama______ 26 F 30 50 71 36 30
+0000007 Kajikawa______ 42 F 50 2 33 15 62
+
+
+[Example 2] How to use the -d<character string> +<character string> option
+
+$ cjoin2 -d@@ key=1 master tran > ok
+$ cat ok
+0000005 Sakimura______ 50 F 82 79 16 21 80
+0000001 @@ @@ @@ 46 39 8 5 21
+0000004 @@ @@ @@ 58 71 20 10 6
+0000009 @@ @@ @@ 60 89 33 18 6
+0000003 Sugiyama______ 26 F 30 50 71 36 30
+0000007 Kajikawa______ 42 F 50 2 33 15 62
+
+
+$ cjoin2 +@@ key=1 master tran > ok
+$ cat ok
+0000005 Sakimura______ 50 F 82 79 16 21 80
+0000001 @@ @@ @@ 46 39 8 5 21
+0000004 @@ @@ @@ 58 71 20 10 6
+0000009 @@ @@ @@ 60 89 33 18 6
+0000003 Sugiyama______ 26 F 30 50 71 36 30
+0000007 Kajikawa______ 42 F 50 2 33 15 62
+
+
+[Example 3] How to use standard input
+
+$ cat tran | cjoin2 +ng key=1 master
+$ cat tran | cjoin2 +ng key=1 master -
+$ cat master | cjoin2 +ng key=1 -tran
+
+
+【Related item】
+
+cjoin0, cjoin1, cjoin2, join0, join1, loopj, loopx, up3
+
+
+last modified: Thu Aug 11 05:40:01 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

@@ -1,0 +1,137 @@
+Tukubai online command manual
+
+loopj
+
+【name】
+
+loopj : concatenate all lines of multiple text files
+
+[Format]
+
+Usage : loopj [-d<string>] num=<num> <file1> <file2> ..
+Version : Thu Dec 15 13:46:38 JST 2011
+Edition: 1
+
+【Explanation】
+
+Concatenate multiple text files specified by arguments using the first field to the field 
+specified by num=<n> as keys (loopj = loop of join).
+
+If there is no matching field in each file, then its output will be
+padded with "0".
+
+Each file to be concatenated must be larger than 0 bytes, and the 
+key field must be unique and sorted in ascending order. 
+
+An error occurs if the number of fields is less than the number of key fields. 
+
+An error also occurs if <file> is a 0-byte file.
+
+
+[Example 1] Basic usage
+
+$ cat file1
+0000003 Sugiyama______ A
+0000005 Sakimura______ B
+0000007 Kajikawa______ C
+0000010 Yanagimoto______ D
+
+$ cat file2
+0000000 50
+0000003 26
+0000004 40
+0000009 68
+
+$ cat file3
+0000000 F
+0000003 F
+0000004 M
+0000005 F
+
+To concatenate the three files, run the command as follows.
+
+$ loopj num=1 file1 file2 file3
+0000000 0 0 50 F
+0000003 Sugiyama______ A 26 F
+0000004 0 0 40 M
+0000005 Sakimura______ B 0 F
+0000007 Kajikawa______ C 0 0
+0000009 0 0 68 0
+0000010 Yanagimoto______ D 0 0
+
+
+Standard input files can be concatenated by changing the file name to -.
+
+$ cat file2 | loopj num=1 file1 - file3
+
+[Example 2] -d option
+
+You can specify a string to complete by using the -d option.
+
+$ loopj -d@@@ num=1 file1 file2 file3
+0000000 @@@ @@@ 50 F
+0000003 Sugiyama______ A 26 F
+0000004 @@@ @@@ 40 M
+0000005 Sakimura______ B @@@ F
+0000007 Kajikawa______ C @@@ @@@
+0000009 @@@ @@@ 68 @@@
+0000010 Yanagimoto______ D @@@ @@@
+
+
+[Example 3] Concatenation of files with only a key
+
+When concatenating files that have only keys, only values are completed.
+
+$ cat file1
+0001 1
+0002 2
+
+$ cat file2
+0001
+0002
+0003
+0004
+
+$ loopj num=1 file1 file2
+0001 1
+0002 2
+0003 0
+0004 0
+
+$ loopj num=1 file2 file2
+0001
+0002
+0003
+0004
+
+
+【caution】
+
+An error will occur if the files to be concatenated are 0 bytes.
+
+$ : > data1
+$ cat data2
+a1
+b2
+c3
+
+$ loopj num=1 data1 data2
+Error[loopj] : 0 byte file [1] cannot be concatenated.
+
+To ensure that data1 in the above example has, say, 3 fields, 
+you can run the command as follows:
+
+$ [ ! -s data1 ] && echo x 0 0 > data1
+$ loopj num=1 data1 data2 | awk '$1!~/x/
+a 0 0 1
+b 0 0 2
+c 0 0 3
+
+
+【Related item】
+
+join0, join1, join2, loopx, up3
+
+last modified: Thu Aug 11 13:22:05 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

@@ -1,0 +1,279 @@
+Tukubai online command manual
+
+map
+
+【name】
+
+map : Convert vertical file to vertical key/horizontal key format table
+
+[Format]
+
+Usage : map [-<l>] num=<n>x<m> <file>
+        map +yarr [-<l>] num=<n>x<m> <file>
+        map +arr [-<l>] num=<n>x<m> <file>
+Option : -m<c> -n
+Version : Sat Sep 19 23:49:25 JST 2020
+Edition: 1
+
+【Explanation】
+
+Assuming that the text data in the argument file or standard input is <n> vertical key fields, 
+<m> horizontal key fields (m = 1 when not specified), and the rest are data fields, 
+re-formats the specified file or standard input into a matrix consisting
+of <n> row key fields, <m> column key fields and the rest of the fields as data fields.
+
+If data is missing by developing it into a table, fill it with 0.
+The character to be completed can be changed with the -m option.
+
+
+【Example 1】
+
+To map the vertical data, execute the command as follows. 
+The value of num=<n> represents the number of vertical key fields.
+In this example, the num value should be 2, which indicates the last field of the vertical key.
+
+$ cat data
+001 Store_A 01/01 103 ← 1:Vertical_key 2:Vertical_key 3:Horizontal_key 4:Data_part
+001 Store_A 01/02 157
+002 Store_B 01/01 210
+002 Store_B 01/02 237
+
+$ map num=2 data | fcols
+  *       * 01/01 01/02
+001 Store_A   103   157
+002 Store_B   210   237
+
+
+[Example 2]
+
+If there is missing data, the missing fields are padded with zeroes.
+
+$ cat data
+001 Store_A 01/01 103
+002 Store_B 01/02 237
+
+$ map num=2 data | fcols
+  *       * 01/01 01/02
+001 Store_A   103     0
+002 Store_B     0   237
+
+
+[Example 3]
+
+If there are multiple fields of data, they are mapped to multiple rows.
+In this case, the rows are indexed A, B, C... automatically.
+
+$ cat data
+Store_A Day_1 103 62 ← 1:Vertical_key 2:Horizontal_key 3:Number_of_sales 4:Number_of_customers
+Store_A Day_2 157 94
+Store_A Day_3 62 30
+Store_A Day_4 131 84
+・
+・
+Store_D Day_6 98 69
+Store_D Day_7 101 90
+
+$ map num=1 data | fcols
+      * * Day_1 Day_2 Day_3 Day_4 Day_5 Day_6 Day_7
+Store_A A   103   157    62   131   189   350   412
+Store_A B    62    94    30    84   111    20   301
+Store_B A   210   237   150   198   259   421   589
+Store_B B   113   121    82   105   189   287   493
+Store_C A    81    76    38    81    98   109   136
+Store_C B    52    49    21    48    61    91   110
+Store_D A    75    72    34    74    91    98   101
+Store_D B    48    42    19    43    51    69    90
+
+
+[Example 4]
+
+If you pipe the results of Example 2 to the "sed" command to replace
+"A" with "Qty_Sold" and "B" with "Num_Cust" then it becomes formatted
+as shown below.
+
+$ map num=1 data | sed -e 's/A/Qty_Sold/1' -e 's/B/Num_Cust/1' | fcols
+      *        * Day_1 Day_2 Day_3 Day_4 Day_5 Day_6 Day_7
+Store_A Qty_Sold   103   157    62   131   189   350   412
+Store_A Num_Cust    62    94    30    84   111    20   301
+Store_B Qty_Sold   210   237   150   198   259   421   589
+Store_B Num_Cust   113   121    82   105   189   287   493
+Store_C Qty_Sold    81    76    38    81    98   109   136
+Store_C Num_Cust    52    49    21    48    61    91   110
+Store_D Qty_Sold    75    72    34    74    91    98   101
+Store_D Num_Cust    48    42    19    43    51    69    90
+
+
+[Example 5]
+
+By specifying the +yarr option, multiple columns in the data part can be expanded horizontally.
+
+$ map +arr num=1 data | fcols
+      * Day_1 Day_1 Day_2 Day_2 Day_3 Day_3  -- Day_7 Day_7
+      *     a     b     a     b     a     b  --     a     b  <-- Automatically
+Store_A   103    62   157    94    62    30  --   412   301      Indexed (a-z)
+Store_B   210   113   237   121   150    82  --   589   493
+Store_C    81    52    76    49    38    21  --   136   110
+Store_D    75    48    72    42    34    19  --   101    90
+
+
+$ map +yarr num=1 data | sed -e '2s/a/Qty_Sold/g' -e '2s/b/Num_Cust/g' | fcols
+      *     Day_1     Day_1     Day_2     Day_2     Day_3     Day_3  --     Day_7     Day_7
+      *  Qty_Sold  Num_Cust  Qty_Sold  Num_Cust  Qty_Sold  Num_Cust  --  Qty_Sold  Num_Cust
+Store_A       103        62       157        94        62        30  --       412       301
+Store_B       210       113       237       121       150        82  --       589       493
+Store_C        81        52        76        49        38        21  --       136       110
+Store_D        75        48        72        42        34        19  --       101        90
+
+
+Use the +arr option if you don't need the horizontal index.
+
+$map +arr num=1 data | fcols
+      *     Day_1     Day_1     Day_2     Day_2     Day_3     Day_3  --     Day_7     Day_7
+Store_A       103        62       157        94        62        30  --       412       301
+Store_B       210       113       237       121       150        82  --       589       493
+Store_C        81        52        76        49        38        21  --       136       110
+Store_D        75        48        72        42        34        19  --       101        90
+
+
+[Example 6]
+
+Padding characters can be specified with the -m option. Default is 0.
+
+$ cat data
+A a 1
+A b 2
+B a 4
+
+
+$map -m@ num=1 data
+* a b
+A 1 2
+B 4 @
+
+
+[Example 7]
+
+By specifying the -<number> option, map can be executed for each <number> field. 
+<number> must be a divisor of the number of fields in the data section.
+
+$ cat data
+X x 1 2 3 4 5 6 ← I want to map the data part in groups of three, such as 1 2 3 and 4 5 6
+X y 1 2 3 4 5 6
+Y x 1 2 3 4 5 6
+Y y 1 2 3 4 5 6
+
+
+$ map -3 num=1 data ← Map every 3 fields
+* * x x y y
+* * a b a b
+X A 1 4 1 4
+X B 2 5 2 5
+X C 3 6 3 6
+Y A 1 4 1 4
+Y B 2 5 2 5
+Y C 3 6 3 6
+
+
+$ map +yarr -3 num=1 data ← In the case of +yarr
+* * x x x y y y
+* * a b c a b c
+X A 1 2 3 1 2 3
+X B 4 5 6 4 5 6
+Y A 1 2 3 1 2 3
+Y B 4 5 6 4 5 6
+
+
+[Example 8]
+
+You can have <n> vertical keys and <m> horizontal keys with num=<n>x<m>. 
+The horizontal key is expanded to the header <m> line.
+
+$ cat data
+X1 Y1 Z1 1 8
+X1 Y1 Z2 2 7
+X1 Y2 Z1 3 6
+X1 Y2 Z2 4 5
+X2 Y1 Z1 5 4
+X2 Y1 Z2 6 3
+X2 Y2 Z1 7 2
+X2 Y2 Z2 8 1
+
+$ map num = 1x2 data
+ * * Y1 Y1 Y2 Y2 ← Horizontal header becomes 2 lines
+ * * Z1 Z2 Z1 Z2
+X1 A  1  2  3  4
+X1 B  8  7  6  5
+X2 A  5  6  7  8
+X2 B  4  3  2  1
+
+$map +yarr num=1x2 data
+ * Y1 Y1 Y1 Y1 Y2 Y2 Y2 Y2 ← Horizontal header becomes 2 lines
+ * Z1 Z1 Z2 Z2 Z1 Z1 Z2 Z2
+ *  a  b  a  b  a  b  a  b
+X1  1  8  2  7  3  6  4  5
+X2  5  4  6  3  7  2  8  1
+
+
+[Example 9]
+
+Combining the -<number> option with num=<n>x<m> works as follows.
+
+$ cat data3
+X1 Y1 Z1 1 8 4 5 6 7
+X1 Y1 Z2 2 7 4 5 6 7
+X1 Y2 Z1 3 6 4 5 6 7
+X1 Y2 Z2 4 5 4 5 6 7
+X2 Y1 Z1 5 4 4 5 6 7
+X2 Y1 Z2 6 3 4 5 6 7
+X2 Y2 Z1 7 2 4 5 6 7
+X2 Y2 Z2 8 1 4 5 6 7
+
+$ map -3 num=1x2 data3
+ * * Y1 Y1 Y1 Y1 Y2 Y2 Y2 Y2
+ * * Z1 Z1 Z2 Z2 Z1 Z1 Z2 Z2
+ * *  a  b  a  b  a  b  a  b
+X1 A  1  5  2  5  3  5  4  5
+X1 B  8  6  7  6  6  6  5  6
+X1 C  4  7  4  7  4  7  4  7
+X2 A  5  5  6  5  7  5  8  5
+X2 B  4  6  3  6  2  6  1  6
+X2 C  4  7  4  7  4  7  4  7
+
+$ map +yarr -3 num=1x2 data3
+ * * Y1 Y1 Y1 Y1 Y1 Y1 Y2 Y2 Y2 Y2 Y2 Y2
+ * * Z1 Z1 Z1 Z2 Z2 Z2 Z1 Z1 Z1 Z2 Z2 Z2
+ * *  a  b  c  a  b  c  a  b  c  a  b  c
+X1 A  1  8  4  2  7  4  3  6  4  4  5  4
+X1 B  5  6  7  5  6  7  5  6  7  5  6  7
+X2 A  5  4  4  6  3  4  7  2  4  8  1  4
+X2 B  5  6  7  5  6  7  5  6  7  5  6  7
+
+
+[Example 10]
+
+If you specify the -n option, the added index becomes a number.
+In this case you are not limited to 26 indices, so use this option
+when mapping a large amount of data.
+
+$ cat data4
+X1 Y1 A1 A2 A3 A4 -- A99 A100
+X1 Y2 B1 B2 B3 B4 -- B99 B100
+X1 Y3 C1 C2 C3 C4 -- C99 C100
+
+$map -n num=1 data4
+ *  *   Y1   Y2   Y3
+X1  1   A1   B1   C1
+X1  2   A2   B2   C2
+・
+・
+X1 29  A99  B99  C99
+X1 30 A100 B100 C100
+
+
+【Related item】
+
+unmap, tateyoko
+
+last modified: Fri Jul 15 15:42:38 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

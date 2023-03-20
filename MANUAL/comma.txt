@@ -1,0 +1,109 @@
+Tukubai online command manual
+
+comma
+
+【name】
+
+comma : Formats the specified field with commas every 3rd/4th digit.
+
+[Format]
+
+Usage : comma [+<n>h][-4] [<f1> <f2> ...] <file>
+         : comma -d[4] <string>
+Version : Thu Apr 21 00:58:47 JST 2022
+Edition: 1
+
+【explanation】
+
+Inserts commas after every 3rd/4th digit in the numeric text data
+specified in the argument or the input file <file>.  The field to be
+formatted is specified as arguments.
+
+If - is specified as <file>, standard input is used.
+
+【caution】
+
+Input file <file> cannot be omitted
+If field specification <f1> <f2> ... is omitted, all fields are specified.
+If there is 0 in field specification <f1> <f2> ..., all fields are specified.
+At this time, even if there are field specifications other than 0 at the same time, they are ignored.
+
+
+【Example 1】
+
+$ cat data
+20060201 296030 6710000
+20060202 1300100 3130000
+20060203 309500 20100
+20060204 16300 300100
+20060205 41000 210000
+20060206 771100 400000
+
+$ comma 2 3 data
+20060201 296,030 6,710,000
+20060202 1,300,100 3,130,000
+20060203 309,500 20,100
+20060204 16,300 300,100
+20060205 41,000 210,000
+20060206 771,100 400,000
+
+$ comma -4 2 3 data 	← 4-digit comma
+20060201 29,6030 671,0000
+20060202 130,0100 313,0000
+20060203 30,9500 2,0100
+20060204 1,6300 30,0100
+20060205 4,1000 21,0000
+20060206 77,1100 40,0000
+
+
+[Example 2]
+
+Use the +h option to add commas except for the first line. 
+Used when the first line is an item name, etc. 
+If you specify a number like +2h or +3h, it will add a comma to the lines after line 2 or 3.
+
+$ cat data 	←original data: items (headers) are attached to the first line
+Date Sales Orders
+20060201 296030 6710000
+20060202 1300100 3130000
+20060203 309500 20100
+20060204 16300 300100
+20060205 41000 210000
+20060206 771100 400000
+
+$ comma +h 2 3 data 	← Comma conversion except for the first line
+Date Sales Orders
+20060201 296,030 6,710,000
+20060202 1,300,100 3,130,000
+20060203 309,500 20,100
+20060204 16,300 300,100
+20060205 41,000 210,000
+20060206 771,100 400,000
+
+[Example 3]
+
+A comma can be added by specifying a string of numbers directly as an argument.
+
+$ comma -d 1234567
+1,234,567
+
+$comma -d4 1234567
+123,4567
+
+
+【Caution】
+
+If you add a comma to the numerical value of the data file with comma, you will not be able 
+to perform numerical calculations with sm2 or divsen after that. Comma addition is used at 
+the final shaping stage, after all calculations have been completed.
+
+Do not add commas for decimal places. Negative numbers are correctly comma treated.
+
+
+【Related item】
+
+keta
+
+last modified: Fri Jul 15 16:39:29 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

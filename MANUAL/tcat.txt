@@ -1,0 +1,73 @@
+Tukubai online command manual
+
+tcat
+
+【name】
+
+tcat : sort files vertically
+
+[Format]
+
+Usage : tcat [-n] <file1> <file2>...
+Version : Sat Jun 20 21:57:22 JST 2020
+Edition: 1
+
+【explanation】
+
+Arranges and concatenates multiple files specified by arguments vertically and outputs them.
+
+
+【Example 1】
+
+$ cat file1
+---Test results---
+No. Name Age Gender A B C D E
+
+$ cat file2
+0000008 Kadoya______ 50 F 52 91 44 9 0
+0000009 Yonehara______ 68 F 60 89 33 18 6
+0000010 Yanagimoto______ 50 F 95 60 35 93 76
+0000011 Yasutake______ 55 F 92 56 83 96 75
+
+
+$ tcat file1 file2
+---Test results---
+No. Name Age Gender A B C D E
+0000008 Kadoya______ 50 F 52 91 44 9 0
+0000009 Yonehara______ 68 F 60 89 33 18 6
+0000010 Yanagimoto______ 50 F 95 60 35 93 76
+0000011 Yasutake______ 55 F 92 56 83 96 75
+
+
+[Example 2]
+
+If you use the -<n> option, you can concatenate files with the number of lines specified by <n>-.
+
+To concatenate two lines apart, execute the command as follows.
+
+$ tcat -2 file1 file2
+---Test results---
+No. Name Age Gender A B C D E
+ 
+ 
+0000008 Kadoya______ 50 F 52 91 44 9 0
+0000009 Yonehara______ 68 F 60 89 33 18 6
+0000010 Yanagimoto______ 50 F 95 60 35 93 76
+0000011 Yasutake______ 55 F 92 56 83 96 75
+
+
+[Example 3]
+
+When reading from the standard input, specify the text on the standard input side with the 
+argument -.
+
+$ cat file1 | tcat-file2
+
+
+【Related item】
+
+ctail, getfirst, getlast, ycat
+
+last modified: Mon Aug 8 10:45:09 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

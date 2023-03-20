@@ -1,0 +1,47 @@
+Tukubai online command manual
+
+isdate
+
+【name】
+
+isdate : check 8 digit date
+
+[Format]
+
+Usage : isdate <date>
+Version : Sat Apr 11 15:42:47 JST 2009
+Edition: 1
+
+【explanation】
+
+If the 8-digit date in the argument exists, the process terminates normally; 
+Otherwise, it terminates abnormally (status 1).
+
+
+【Example】
+
+$isdate 20090101
+$ echo $?
+0
+
+$isdate 20090199
+$ echo $?
+1
+
+【remarks】
+
+About leap years
+   - Years divisible by 4 are leap years. (until 29th in February)
+   - Years that are divisible by 100 are not leap years. (until 28th in February)
+   - Additionally, years divisible by 400 are leap years. (until 29th in February)
+
+
+【bug】
+
+September 1752 does not exist from 3rd to 13th, but this is not an error.
+The dates are skipped to match the difference in the month when the Julian calendar shifted to the Gregorian calendar. (found at $ cal 9 1752)
+
+
+last modified: Fri Aug 12 12:56:05 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

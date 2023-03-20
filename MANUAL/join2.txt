@@ -1,0 +1,183 @@
+Tukubai online command manual
+
+join2
+
+【name】
+
+join2 : Join master file to transaction file (unmatched lines are dummy
+data)
+
+[Format]
+
+Usage : join2 [-d<string>|+<string>] key=<key> <master> [<tran>]
+Version : Sun Jun 19 23:55:51 JST 2022
+Edition: 1
+
+【Explanation】
+
+Only those rows in the text file <tran> where the <key> fields of
+<tran> match corresponding fields of <master> are selected,
+then joined with the fields in <master> and output.  The join occurs
+by adding the fields from <master> immediately after the key field
+in <tran>.  For rows that do not match, Dummy data '*' is concatenated 
+and outputted for those rows. 
+Dummy data can be specified with the -d option or the + option.
+
+The key fields in <master> and <tran> MUST be sorted in ascending
+order.  Also, the key fields in <master> must only contain unique
+values (the same value cannot be repeated in the key fields).  the
+key fields in <tran> do not have this requirement; multiple records
+in <tran> can have the same value in the key fields.
+
+If - is specified for master, the standard input is used as the master file. 
+If tran is not specified or - is specified, the standard input is the transaction file.
+
+Multiple fields can be specified as keys.
+<key> can be specified as:
+key=3     The third field in the transaction file
+key=3/5   The third, fourth and fifth field in the transaction
+          file (the first, second and third field in the master file)
+key=4@3   The fourth and third field in the transaction file
+          the second and first field in the master file)
+key=NF    Last field in the transaction file (first field in the
+          master file)
+key=NF-3  Third to last field in the transaction file (first field
+          in the master file)
+
+Field positions can be specified in the form NF or NF-x using NF, 
+which means number of fields in a line.
+
+If there is even one 0 in the key specification, it means that all fields are specified.
+
+Unaligned keys in tran cannot be processed by join2. 
+In that case, align the tran once and then process it with join2, or use cjoin2 instead.
+
+[Example 1] Basic pattern
+
+$ cat master
+0000003 Sugiyama______ 26 F
+0000005 Sakimura______ 50 F
+0000007 Kajikawa______ 42 F
+0000010 Yanagimoto______ 50 F
+
+$ cat kekka
+0000000 91 59 20 76 54
+0000001 46 39 8 5 21
+0000003 30 50 71 36 30
+0000004 58 71 20 10 6
+0000005 82 79 16 21 80
+0000007 50 2 33 15 62
+0000008 52 91 44 9 0
+0000009 60 89 33 18 6
+0000010 95 60 35 93 76
+0000011 92 56 83 96 75
+
+Lines that do not exist in master are complemented with * and outputted as follows.
+
+$ join2 key=1 master kekka
+0000000 ********** ** * 91 59 20 76 54
+0000001 ********** ** * 46 39 8 5 21
+0000003 Sugiyama______ 26 F 30 50 71 36 30
+0000004 ********** ** * 58 71 20 10 6
+0000005 Sakimura______ 50 F 82 79 16 21 80
+0000007 Kajikawa______ 42 F 50 2 33 15 62
+0000008 ********** ** * 52 91 44 9 0
+0000009 ********** ** * 60 89 33 18 6
+0000010 Yanagimoto______ 50 F 95 60 35 93 76
+0000011 ********** ** * 92 56 83 96 75
+
+
+[Example 2]
+
+When specifying multiple consecutive fields in order from the left as keys, it is as follows. 
+Checking if the keys match in the 2nd and 3rd fields.
+
+$ cat master
+A 0000003 Sugiyama______ 26 F
+A 0000005 Sakimura______ 50 F
+B 0000007 Kajikawa______ 42 F
+C 0000010 Yanagimoto______ 50 F
+
+$ cat kekka
+1 A 0000000 91 59 20 76 54
+2 A 0000001 46 39 8 5 21
+3 A 0000003 30 50 71 36 30
+4 A 0000004 58 71 20 10 6
+5 A 0000005 82 79 16 21 80
+6 B 0000007 50 2 33 15 62
+7 B 0000008 52 91 44 9 0
+8 C 0000009 60 89 33 18 6
+9 C 0000010 95 60 35 93 76
+10 C 0000011 92 56 83 96 75
+
+$ join2 key=2/3 master kekka
+1 A 0000000 ********** ** * 91 59 20 76 54
+2 A 0000001 ********** ** * 46 39 8 5 21
+3 A 0000003 Sugiyama______ 26 F 30 50 71 36 30
+4 A 0000004 ********** ** * 58 71 20 10 6
+5 A 0000005 Sakimura______ 50 F 82 79 16 21 80
+6 B 0000007 Kajikawa______ 42 F 50 2 33 15 62
+7 B 0000008 ********** ** * 52 91 44 9 0
+8 C 0000009 ********** ** * 60 89 33 18 6
+9 C 0000010 Yanagimoto______ 50 F 95 60 35 93 76
+10 C 0000011 ********** ** * 92 56 83 96 75
+
+
+[Example 3]
+
++<string> is an option to specify characters to be complemented as dummy data. 
+Specify the character used for completion after +.
+
+$ cat master
+0000003 Sugiyama______ 26 F
+0000005 Sakimura______ 50 F
+0000007 Kajikawa______ 42 F
+0000010 Yanagimoto______ 50 F
+
+$ cat kekka
+0000000 91 59 20 76 54
+0000001 46 39 8 5 21
+0000003 30 50 71 36 30
+0000004 58 71 20 10 6
+0000005 82 79 16 21 80
+0000007 50 2 33 15 62
+0000008 52 91 44 9 0
+0000009 60 89 33 18 6
+0000010 95 60 35 93 76
+0000011 92 56 83 96 75
+
+$ join2 +@ key=1 master kekka
+0000000 @ @ @ 91 59 20 76 54
+0000001 @ @ @ 46 39 8 5 21
+0000003 Sugiyama______ 26 F 30 50 71 36 30
+0000004 @ @ @ 58 71 20 10 6
+0000005 Sakimura______ 50 F 82 79 16 21 80
+0000007 Kajikawa______ 42 F 50 2 33 15 62
+0000008 @ @ @ 52 91 44 9 0
+0000009 @ @ @ 60 89 33 18 6
+0000010 Yanagimoto______ 50 F 95 60 35 93 76
+0000011 @ @ @ 92 56 83 96 75
+
+
+【remarks】
+
+When master is 0 bytes, output tran itself without concatenating anything.
+
+$ : > master
+$ join2 key=1 master tran > data
+$ cmp tran data ←The same data is output
+
+When you want to guarantee the fields of master, for example, write the following code.
+
+$ [ ! -s master ] && echo 0000000 0 > master
+$ join2 key=1 master tran
+
+
+【Related item】
+
+cjoin0, cjoin1, cjoin2, join0, join1, loopj, loopx, up3
+
+
+last modified: Fri Jul 15 15:42:38 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

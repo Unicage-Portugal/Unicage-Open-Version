@@ -1,0 +1,110 @@
+Tukubai online command manual
+
+formhame
+
+【name】
+
+formhame : insert text into HTML templates
+
+[Format]
+
+Usage : formhame <html_template> <data>
+Option : -i<c>
+       : -d<c>
+Version: Sun Mar 17 12:51:52 JST 2013
+Edition: 1
+
+【explanation】
+
+Values specified in the <data> file (1st field: tag name, 2nd field and after: value) 
+in various input tags (text, radio, checkbox, hidden), text area tags, and select tags 
+are inserted in a file following the sructure present in the <html_template> file.
+
+【example】
+
+$ cat html
+<html><body>
+<form name="name_form">
+<input type="text" name="name_text1" />
+<input type="text" name="name_text2" />
+<input type="radio" name="name_radio" value="a"/>
+<input type="radio" name="name_radio" value="b"/>
+<input type="checkbox" name="name_checkbox" value="x"/>
+<input type="checkbox" name="name_checkbox" value="y"/>
+<textarea name="name_textarea">
+</textarea>
+<select name="name_pulldown">
+<option value="pd1">pd1</option>
+<option value="pd2">pd2</option>
+<option value="pd3">pd3</option>
+</select>
+<input type="submit" name="submit" />
+</form>
+</body></html>
+
+$ cat data
+name_text1 hello
+name_text2
+name_radio b
+name_checkbox y
+name_textarea usp\nlaboratory
+name_pulldown pd3
+
+$ formhame html data
+<html><body>
+<form name="name_form">
+<input type="text" name="name_text1" value="hello"/>
+<input type="text" name="name_text2" />
+<input type="radio" name="name_radio" value="a"/>
+<input type="radio" name="name_radio" value="b" checked="checked" />
+<input type="checkbox" name="name_checkbox" value="x"/>
+<input type="checkbox" name="name_checkbox" value="y" checked="checked" />
+<textarea name="name_textarea">
+usp
+laboratories
+</textarea>
+<select name="name_pulldown">
+<option value="pd1">pd1</option>
+<option value="pd2">pd2</option>
+<option value="pd3" selected="selected">pd3</option>
+</select>
+<input type="submit" name="submit" />
+</form>
+</body></html>
+
+
+【remarks】
+
+  1. For input tags, if the template already contains value="", replace the value. 
+     Similarly, replace the value in case of textarea tag. 
+     In the case of select tag, if selected="selected" is already specified in the template, 
+     the specified location is moved.
+  2. For textarea, replace the existing value. \n is replaced with a newline.
+  3. If there is no value, no value is inserted.
+  4. If you specify a character string with the -i option, the value equal to that character 
+     string is inserted as a null character string.
+  5. If you specify a character string with the -d option, the specified character string part 
+     in the value will be replaced with single-byte spaces and inserted. 
+     However, the \ specified character string is inserted by replacing it with the specified 
+     character string (with \ removed) instead of the single-byte space.
+  6. If both the -i option and the -d option are specified, the -i option is processed first.
+  7. HTML must be written correctly. Tags should be written as <tag /> or <tag></tag>. 
+     Variables must be enclosed in " " (eg value="1"). 
+     When input type="checkbox", value="XXX" must be specified.
+  8. In the case of multiple selection of checkbox, radiobox, selectbox, the name format data 
+     becomes multiple lines for one tag as follows.
+
+name_radio a
+name_radio b
+name_checkbox x
+name_checkbox y
+name_pulldown pd1
+name_pulldown pd2
+
+【Related item】
+
+filehame, mojihame
+
+last modified: Mon Aug 1 16:43:39 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

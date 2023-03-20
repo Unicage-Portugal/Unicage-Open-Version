@@ -1,0 +1,98 @@
+Tukubai online command manual
+
+ycat
+
+【name】
+
+ycat : horizontal concatenation of files
+
+[Format]
+
+Usage : ycat [-n] file1 file2 ....
+Version : Sat Jun 20 21:57:22 JST 2020
+Edition: 1
+
+【explanation】
+
+Arranges and concatenates multiple files specified by arguments horizontally and outputs them. 
+The shape of each file does not collapse, and the files are horizontally connected as they look.
+
+
+[Example 1] Basic usage
+
+$ cat file1
+0000000 Hamachi______ 50 F
+0000001 Suzuta______ 50 F
+0000003 Sugiyama______ 26 F
+0000004 Shirato______ 40 M
+0000005 Sakimura______ 50 F
+0000007 Kajikawa______ 42 F
+
+$ cat file2
+0000000 91 59 20 76 54
+0000001 46 39 8 5 21
+0000003 30 50 71 36 30
+0000004 58 71 20 10 6
+0000005 82 79 16 21 80
+0000007 50 2 33 15 62
+
+$ ycat file1 file2
+0000000 Hamachi______ 50 F 0000000 91 59 20 76 54
+0000001 Suzuta______ 50 F 0000001 46 39 8 5 21
+0000003 Sugiyama______ 26 F 0000003 30 50 71 36 30
+0000004 Shirato______ 40 M 0000004 58 71 20 10 6
+0000005 Sakimura______ 50 F 0000005 82 79 16 21 80
+0000007 Kajikawa______ 42 F 0000007 50 2 33 15 62
+
+
+[Example 2]
+
+You can use the -<n> option to separate files by the number of spaces specified by <n>.
+
+$ ycat -3 file1 file2
+0000000 Hamachi______ 50 F 0000000 91 59 20 76 54
+0000001 Suzuta______ 50 F 0000001 46 39 8 5 21
+0000003 Sugiyama______ 26 F 0000003 30 50 71 36 30
+0000004 Shirato______ 40 M 0000004 58 71 20 10 6
+0000005 Sakimura______ 50 F 0000005 82 79 16 21 80
+0000007 Kajikawa______ 42 F 0000007 50 2 33 15 62
+
+
+[Example 3]
+
+If you specify -0, no file gaps are added.
+
+$ycat -0 file1 file2
+0000000 Hamachi______ 50 F0000000 91 59 20 76 54
+0000001 Suzuta______ 50 F0000001 46 39 8 5 21
+0000003 Sugiyama______ 26 F0000003 30 50 71 36 30
+0000004 Shirato______ 40 M0000004 58 71 20 10 6
+0000005 Sakimura______ 50 F0000005 82 79 16 21 80
+0000007 Kajikawa______ 42 F0000007 50 2 33 15 62
+
+
+[Example 4]
+
+Write - to read text from standard input.
+
+$ cat file1 | ycat - file2
+
+$cat file2 | ycat file1 -
+
+
+【remarks】
+
+ycat first measures the maximum width of each file so that the shape of each file after 
+concatenation does not collapse. For this reason, if you simply want to concatenate spaces 
+horizontally, it is faster to use the paste command as follows.
+
+$ paste -d " " file1 file2 file3
+
+
+【Related item】
+
+ctail, getfirst, getlast, tcat
+
+last modified: Fri Aug 5 17:22:54 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

@@ -1,0 +1,276 @@
+Tukubai online command manual
+
+mojihame
+
+【name】
+
+mojihame : fit text in template
+
+[Format]
+
+Usage : mojihame <template> <data> (normal)
+         : mojihame -l <label> <template> <data> (line by line)
+         : mojihame -h <label> <template> <data> (hierarchical data)
+Version : Tue Oct 20 15:17:47 JST 2020
+Edition: 1
+
+【Explanation】
+
+Reads data from data or environment variables and inserts values into the template file 
+specified as an argument. There are three ways to use it:
+
+  1. Fit all fields of data in order (normal)
+  2. Repeatedly fit the row-wise field of data between the specified labels 
+     of template (row-by-row)
+  3. If the data is hierarchical data, fit hierarchically between the labels 
+     specified in the template (hierarchical data)
+
+
+[Example 1] Normal
+
+Reads the fields in "data" in order (from top-left to bottom-right)
+and merges them into "template" replacing %1 %2 %3 ...
+
+$ cat template
+1st=%1
+2nd=%2
+3rd=%3 4th=%4
+
+$ cat data
+a b
+c d
+
+$ mojihame template data
+1st=a
+2nd=b
+3rd=c 4th=d
+
+
+[Example 2] Normal 2
+
+By default "@" is replaced by a null string. 
+Use the -d option to change this default. 
+If the -d option is used alone, the null string replacement function is disabled.
+
+$ cat data
+a @
+@ d
+
+$ cat template
+1st=%1
+2nd=%2
+3rd=%3 4th=%4
+
+$ mojihame template data
+1st=a
+2nd=
+3rd= 4th=d
+
+$ mojihame -dX template data
+1st=a
+2nd=X
+3rd=X 4th=d
+
+
+[Example 3] Line by line
+
+Data is read line by line, and each field in the line corresponds to %1 %2 .... 
+When the next line is read, the template is used again and the data is inset and printed. 
+
+$ cat data
+a b c d
+w x y z
+
+$ cat template
+1st=%1 2nd=%2
+3rd=%3 4th=%4
+
+$ mojihame -l template data
+1st=a 2nd=b
+3rd=c 4th=d
+1st=w 2nd=x
+3rd=y 4th=z
+
+
+[Example 4] Row unit 2
+
+If you specify an argument (label) with the -l option, the data is repeatedly 
+inserted only in the lines enclosed by the template label. 
+Lines containing labels are not outputted at this time. 
+Also, the preceding and following parts that are not sandwiched between labels are not 
+converted at all and are output as they are. 
+A label can be described only twice inside a template, and is regarded as the start line and 
+end line of the inset object, respectively. 
+Note that the specified label is judged to be a label line by partial match.
+
+$ cat data
+a b
+y z
+
+$ cat template
+header %1
+LABEL
+1st=%1 2nd=%2
+LABEL
+footer %2
+
+$ mojihame -lLABEL template data
+header %1
+1st=a 2nd=b
+1st=y 2nd=z
+footer %2
+
+[Example 5] Row unit 3
+
+By repeatedly using the -l option, you can easily generate HTML such as pulldowns. 
+Only one set of specified labels is allowed in the template, so the command is executed by 
+inserting values in order from the inner label as shown in the example below.
+
+$ cat member
+Sato
+Suzuki
+
+$ cat kbn1
+Tokyo
+Osaka
+Yokohama
+
+$ cat kbn2
+Man
+Woman
+
+$ cat template
+MEMBER
+Name = %1
+K1
+Place name = %1
+K1
+K2
+Gender = %1
+K2
+MEMBER
+
+$ mojihame -lK1 template kbn1 | mojihame -lK2 - kbn2 | mojihame -lMEMBER -member
+Name = Sato
+Place name = Tokyo
+Place name = Osaka
+Place name = Yokohama
+Gender = Male
+Gender = Female
+Name = Suzuki
+Place name = Tokyo
+Place name = Osaka
+Place name = Yokohama
+Gender = Male
+Gender = Female
+
+
+[Example 6] Row unit 4
+
+By default, "@" is replaced as a null string. 
+Use the -d option to change this default. The -d option must be specified after the -l option.
+
+$ mojihame -lLABEL -dx template data
+
+
+[Example 7] Hierarchical data
+
+The "-h" option is used to merge heirarchical data. You must specify
+a "label". 
+In the "template" the "%num" strings that occur within
+the heirarchical labels correspond to the heirarchical key fields
+within "data". For example, in the following "template", the %1 is
+surrounded by "LABEL-1", and within the area surrounded by "LABEL-1"
+there is "LABEL-2" which encloses %2 and %3. In this case, the area
+surrounded by "LABEL-1" is only iterated and merged for the number
+of times that the first field changes, and the area surrounded by
+"LABEL-2" is only iterated and merged for the number of records
+whose second and third fields share the same first field value.
+There is no limit to the depth of the nesting. Also, the label is
+identified with a substring search, so as in the example if the
+command line contains "-hLABEL" then the "template" should contain
+heirarchical labels such as "LABEL-1", "LABEL-2", etc. Only one set
+of heirarchical labels is allowed in a "template".
+
+$ cat template
+Title %1
+LABEL-1
+Name = %1
+LABEL-2
+Place name = %2 Time = %3
+LABEL-2
+LABEL-1
+
+$ cat data
+Yamada Tokyo 10:00
+Yamada Osaka 20:00
+Yamada Yokohama 09:30
+Suzuki Tokyo 16:45
+Suzuki Kobe 15:30
+
+$ mojihame -hLABEL template dat
+Title %1
+Name = Yamada
+Place name = Tokyo Time = 10:00
+Place name = Osaka Time = 20:00
+Place name = Yokohama Time = 09:30
+Name = Suzuki
+Place = Tokyo Time = 16:45
+Place name = Kobe Time = 15:30
+
+
+There is no restriction on the depth of hierarchy. 
+A label is determined as a label line by partial match. 
+It is effective to use -hLABEL on the command line and LABEL-1 and LABEL-2 according 
+to the hierarchy in the template. Only one set of each such hierarchical label is allowed 
+in a template.
+
+
+[Note 1]
+
+By default "@" is replaced as a null string. Use the -d option to change the character. 
+The -d option must be specified after the -h and -l options.
+
+$ mojihame -dx template data
+
+$ mojihame -lLABEL -dx template data
+
+$ mojihame -hLABEL -dx template data
+
+
+[Note 2] Handling of underscore data
+
+\_ in the data will be replaced with _ after running mojihame. 
+Unescaped _ is replaced with a single-byte space.
+
+$ cat template
+<input type="text" value="%1" />
+<input type="text" value="%2" />
+<input type="text" value="%3" />
+
+$ cat data
+usp_lab
+usp\_lab
+______\_\_
+
+$ mojihame template data
+<input type="text" value="usp lab" />
+<input type="text" value="usp_lab" />
+<input type="text" value="__" />
+
+
+【remarks】
+
+  1. Expects data from standard input when - is specified in the file name. 
+     Template can also specify either data.
+  2. If the -d option does not specify a character string, all data values are inserted 
+     into the template as is.
+
+
+【Related item】
+
+filehame, formhame
+
+last modified: Fri Aug 5 16:02:27 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

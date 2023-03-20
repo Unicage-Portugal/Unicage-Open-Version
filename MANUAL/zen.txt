@@ -1,0 +1,78 @@
+Tukubai online command manual
+
+zen
+
+【name】
+
+zen : convert to double-byte
+
+[Format]
+
+Usage : zen [-k] [<f1> <f2> ..] [<file>]
+         : zen -d [<string>]
+Version : Oct 20 17:32:09 JST 2022
+Edition: 1
+
+【explanation】
+
+Converts all single-byte alphanumeric characters and katakana in text data 
+in the argument file or standard input to full-width characters and outputs.
+
+0 means all fields in the field specification.
+
+
+【Example 1】
+
+Converts the contents of the specified field in the argument file to full-width.
+
+$ cat data
+これは ﾃﾞｰﾀ です。
+This is data
+123 456 7890
+
+$ zen 1 2 3 data
+これは データ です。
+Ｔｈｉｓ ｉｓ ｄａｔａ
+１２３ ４５６ ７８９０
+
+[Example 2]
+
+If no field is specified, the entire line will be double-byte. 
+Half-width spaces are also converted to full-width spaces.
+
+$ cat data
+1 2 3
+
+$ cat data | zen
+１　２　３
+
+
+[Example 3]
+
+In the case of zen -k <file>, only half-width katakana in <file> will be full-width. 
+Since half-width kana cannot be used in the subject and body of the email, 
+this filter is used for preprocessing.
+
+$ cat data2
+123ｱｲｳｴｵ
+
+$ cat data2 | zen -k
+123アイウエオ
+
+
+[Example 4]
+
+The -d option converts the half-width part of the string specified in the argument 
+to full-width and outputs it.
+
+$ zen -d ｶﾀｶﾅABC123 	← Pass the half-width characters as an argument.
+カタカナＡＢＣ１２３ 		← Output all full-width characters
+
+
+【Related item】
+
+han
+
+last modified: Fri Oct 21 08:21:02 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

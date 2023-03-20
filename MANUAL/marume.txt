@@ -1,0 +1,81 @@
+Tukubai online command manual
+
+marume
+
+【name】
+
+marume : round off, round up, round down
+
+[Format]
+
+Usage : marume [+age| -sage] <f1.d1> <f2.d2> .. <file>
+Version : Thu Dec 15 13:46:38 JST 2011
+Edition: 1
+
+【Explanation】
+
+Rounds, rounds up, or truncates the specified field of the argument file or standard input text 
+data to the specified number of digits and outputs it. 
+Default behavior is rounding. 
+
+You can explicitly specify rounding up with +age and rounding down with -sage. 
+If 0 is specified after the decimal point (n.0), the corresponding field is output as an integer. 
+Also, if the number of digits is set to 0 + the number of digits, 
+the digits below the number of digits in the integer part are rounded off, rounded up, or 
+rounded down.
+
+
+【Example 1】
+
+$ cat data
+01 0.3418 1.5283 9.0023 7.1234 1234
+02 3.1242 7.1423 6.5861 2.7735 1235
+03 6.8254 2.6144 4.3234 3.4231 -1234
+04 7.0343 3.3312 7.8678 1.3295 -1235
+
+2nd field rounded to whole number, 3rd field rounded to 1 decimal place, 
+4th field rounded to 2 decimal places, 5th field rounded to 3 decimal places, 
+6th field rounded to ones place and output as follows:
+
+$ marume 2.0 3.1 4.2 5.3 6.01 data
+01 0 1.5 9.00 7.123 1230
+02 3 7.1 6.59 2.774 1240
+03 7 2.6 4.32 3.423 -1230
+04 7 3.3 7.87 1.330 -1240
+
+
+[Example 2]
+
+Changing all of Example 1 from rounding to rounding up results in the following.
+
+$ marume +age 2.0 3.1 4.2 5.3 6.01 data
+01 1 1.6 9.01 7.124 1240
+02 4 7.2 6.59 2.774 1240
+03 7 2.7 4.33 3.424 -1240
+04 8 3.4 7.87 1.330 -1240
+
+
+[Example 3]
+
+If we change all of Example 1 from rounding to rounding down, we get:
+
+$ marume -sage 2.0 3.1 4.2 5.3 6.01 data
+01 0 1.5 9.00 7.123 1230
+02 3 7.1 6.58 2.773 1230
+03 6 2.6 4.32 3.423 -1230
+04 7 3.3 7.86 1.329 -1230
+
+
+【caution】
+
+Negative numbers are obtained by rounding, rounding up, or rounding down positive numbers 
+with a minus sign.
+
+
+【Related item】
+
+divsen
+
+last modified: Fri Jul 15 15:42:38 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

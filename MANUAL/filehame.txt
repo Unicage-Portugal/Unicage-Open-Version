@@ -1,0 +1,66 @@
+Tukubai online command manual
+
+filehame
+
+【name】
+
+filehame : fit a file into a template
+
+[Format]
+
+Usage : filehame -l<string> <template> [<data>]
+Version : Sat Sep 24 10:59:05 JST 2022
+Edition: 1
+
+【explanation】
+
+Replace the line containing the string <string> in the <template> file with the contents 
+of the <data> file.
+
+【Example 1】
+
+$ cat template
+<html>
+<meta>
+<!-- label1 -->
+</meta>
+<body>
+<!-- label2 -->
+</body>
+</html>
+
+
+$ cat data1
+<script type="javascript/text">
+         function sb(i) {
+                 submit(getElementById(i))
+         }
+</script>
+
+
+$ cat data2
+<input id="123" type="button" onclick=sb('123') value="push" />
+
+
+$ filehame -llabel1 template data1 | filehame -llabel2 - data2
+<html>
+<meta>
+<script type="javascript/text">
+         function sb(i) {
+                 submit(getElementById(i))
+         }
+</script>
+</meta>
+<body>
+<input id="123" type="button" onclick=sb('123') value="push" />
+</body>
+</html>
+
+
+【Related item】
+
+formhame, mojihame
+
+last modified: Fri Oct 21 08:21:02 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

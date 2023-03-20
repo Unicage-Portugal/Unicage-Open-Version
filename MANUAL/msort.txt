@@ -1,0 +1,42 @@
+Tukubai online command manual
+
+msort
+
+【name】
+
+msort : on-memory sort
+
+[Format]
+
+Usage : msort key=<key> [<file>]
+Version : Sun Aug 28 11:47:10 JST 2022
+Edition: 1
+
+【Explanation】
+
+Sort <file> according to key=<key>. As <key> you can specify the position of the field.
+
+   msort key=2 file
+   msort key=2/5 file
+   msort key=3@1@NF file
+
+There is no limit on key length or number of key fields. 
+It does not matter if it contains multi-byte characters such as Japanese. 
+
+You can use r after a field position sorts that field in descending order. 
+If you specify n after the field position, that field's values will be sorted as numbers. 
+If you specify N after the field, the values will be sorted in descending order as numbers. 
+You can also use nr to compare numerically and sort in descending order. 
+
+
+If the fields before and after the / have sort types, they must be aligned before and after.
+
+   msort key=2n/5n file o
+   msort key=2n/5nr file ×
+   msort key=2n/5r file ×
+
+If no file name is specified or - is specified, it reads from standard input.
+
+last modified: Sun Aug 28 11:49:10 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

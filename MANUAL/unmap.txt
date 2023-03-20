@@ -1,0 +1,78 @@
+Tukubai online command manual
+
+unmap
+
+【name】
+
+unmap : Convert vertical key/horizontal key format table data to vertical file
+
+[Format]
+
+Usage : map [-<l>] num=<n>x<m> <file>
+         : map +yarr [-<l>] num=<n>x<m> <file>
+         : map +arr [-<l>] num=<n>x<m> <file>
+Version : Fri Nov 20 17:00:13 JST 2020
+Edition: 1
+
+【explanation】
+
+It does the opposite of map. 
+
+In summary, this command does the following: 
+1. Reverts a file mapped with "map num=<n>x<m>" back to its original form.
+2. Reverts a file mapped with "map +yarr num=<n>x<m>" back to its original form.
+
+For more details about command map, check: "man2 map"
+
+
+【Example 1】
+
+Convert tabular data to vertical files. 
+The value of num=<n> represents the number of vertical key fields.
+
+$ cat data
+  *       * 01/01 01/02
+001 Store_A   103   157
+002 Store_B   210   237
+
+
+$ unmap num=2 data | keta
+001 Store_A 01/01 103
+001 Store_A 01/02 157
+002 Store_B 01/01 210
+002 Store_B 01/02 237
+
+
+[Example 2]
+
+If there are multiple types of data parts, map them to multiple columns.
+
+$ cat data | keta
+      * * Day_1 Day_2 Day_3 Day_4 Day_5 Day_6 Day_7
+Store_A A   103   157    62   131   189   350   412
+Store_A B    62    94    30    84   111    20   301
+Store_B A   210   237   150   198   259   421   589
+Store_B B   113   121    82   105   189   287   493
+Store_C A    81    76    38    81    98   109   136
+Store_C B    52    49    21    48    61    91   110
+Store_D A    75    72    34    74    91    98   101
+Store_D B    48    42    19    43    51    69    90
+
+
+$ unmap num=1 data | keta
+Store_A Day_1 103 62
+Store_A Day_2 157 94
+Store_A Day_3  62 30
+Store_A Day_4 131 84
+	(...)
+Store_D Day_6  98 69
+Store_D Day_7 101 90
+
+
+【Related item】
+
+map, tateyoko
+
+last modified: Fri Jul 15 15:42:38 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

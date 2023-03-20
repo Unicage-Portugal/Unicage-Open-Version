@@ -1,0 +1,48 @@
+Tukubai online command manual
+
+plus
+
+【name】
+
+plus : addition of arguments
+
+[Format]
+
+Usage : plus v1 v2 ...
+Version : Sat Jun 20 21:57:21 JST 2020
+Edition: 1
+
+【Explanation】
+
+Print the values of v1 + v2 + v3 ...
+
+
+【example】
+
+$ plus 1 2 3 4
+10
+
+$ plus 1.21 2.345 -2.524
+1.031
+
+
+【example】
+
+Immediately after pipe processing, the resulting statuses of the commands in each line 
+of the pipe are added, and if the result is 0, the result is normal termination. 
+If not, the result is an error termination. This usage is limited to bash where 
+${PIPESTATUS[@]} is provided.
+
+
+$ command1 | command2 | command3 | ... > result
+
+$ [ $plus ${PIPESTATUS[@]}) -ne 0 ] && exit
+
+
+【Related item】
+
+kasan, ratio, sm2, sm4, sm5, ysum
+
+last modified: Fri Jul 15 15:42:38 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

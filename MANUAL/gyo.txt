@@ -1,0 +1,86 @@
+Tukubai online command manual
+
+gyo
+
+【name】
+
+gyo : count lines
+
+[Format]
+
+Usage : gyo [-f] [<file> ...]
+Version : Tue Sep 6 08:55:48 JST 2022
+Edition: 1
+
+【explanation】
+
+Counts and outputs the number of lines (number of lines) of text data in the 
+argument file or standard input.
+
+If - is specified as <file>, standard input is used.
+
+Use the "-f" option to display file names and line numbers respectively.
+
+You can count the number of lines in multiple files at once.
+
+
+【Example 1】
+
+$ cat data
+0000000 Hamachi______ 50 F 91 59 20 76 54
+0000001 Suzuta______ 50 F 46 39 8 5 21
+0000003 Sugiyama______ 26 F 30 50 71 36 30
+0000004 White clay______ 40 M 58 71 20 10 6
+0000005 Sakimura______ 50 F 82 79 16 21 80
+0000007 Kajikawa______ 42 F 50 2 33 15 62
+
+$ gyo data
+6
+
+
+[Example 2]
+
+$ cat data1
+1 file1
+2 file1
+3 file1
+
+$ cat data2
+1 file2
+2 file2
+
+$ cat data3
+1 file3
+2 file3
+3 file3
+4 file3
+
+$ gyo data1 data2 data3
+3
+2
+4
+
+
+[Example 3]
+
+$ gyo -f data1 data2 data3
+data1 3
+data2 2
+data3 4
+
+
+[Example 4]
+
+$ cat data2 | gyo -f data1 - data3
+data1 3
+data2 2
+data3 4
+
+
+【Related item】
+
+count, juni, rank, retu
+
+last modified: Tue Sep 6 09:02:05 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

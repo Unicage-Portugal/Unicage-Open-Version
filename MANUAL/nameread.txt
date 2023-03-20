@@ -1,0 +1,95 @@
+Tukubai online command manual
+
+nameread
+
+【name】
+
+nameread : read file in name format
+
+[Format]
+
+Usage : nameread [-el] <name> <namefile>
+Option : -d<c> replace whitespace
+         : -i<string> null data initialization
+Version : Mon Sep 20 09:31:28 JST 2021
+Edition: 1
+
+【Explanation】
+
+Reads a value from a file <namefile> in NAME format by specifying
+the name.  If <namefile> is omitted or specified as "-" then the
+command will read from standard input.
+
+The -l option will also output the name as well as the value.
+The -e option will use a regular expression to specify the name.
+The -i option initializes null data.
+
+
+【example】
+
+$ cat namefile
+A usp
+B usp laboratory
+C
+
+# Normal Output
+$ nameread A namefile
+usp
+
+# Output the name and the value together
+$ nameread -l A namefile
+A usp
+
+# Name format data includes whitespace
+$ nameread B namefile
+usp laboratory
+
+# Use the -d option to convert spaces
+$ nameread -d_B namefile
+usp_laboratory
+
+# If you want to remove spaces, specify the -d option without an argument.
+$ nameread -d B namefile
+uslaboratory
+
+
+# When reading a field with no value, an empty line is output
+$ name read C namefile
+
+
+# Use -i option to initialize null data
+$ namread -i@@@ C namefile
+@@@
+
+
+# output nothing if the name does not exist
+$ name read D namefile
+
+# Specify a regular expression
+$ cat namefile2
+A_01 1
+A_02 2
+A_03 3
+A_10 5
+AA_1 7
+
+$ nameread -e '^A_[0-9]+$' namefile2
+1
+2
+3
+5
+
+$ nameread -el '^A_[0-9]+$' namefile2
+A_01 1
+A_02 2
+A_03 3
+A_10 5
+
+
+【Related item】
+
+cgi-name, mime-read
+
+last modified: Fri Jul 15 15:42:38 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

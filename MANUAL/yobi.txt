@@ -1,0 +1,98 @@
+Tukubai online command manual
+
+yobi
+
+【name】
+
+yobi : Day of the week calculation
+
+[Format]
+
+Usage : yobi [-e|-j] <field> <filename>
+           yobi -d [-e|-j] <string>
+Version : Sat Jun 20 21:57:23 JST 2020
+Edition: 1
+
+【explanation】
+
+Inserts the code of the year, month, day and day of the week in the specified field 
+of the file read from the argument or standard input into the field next to the specified field 
+and outputs it. 
+The format of the date in the source file must be 8 digits YYYYMMDD, and the code of the day 
+of the week is (Sun=0, Mon=1, Tue=2, Wed=3, Thu=4, Fri=5, Sat=6) to output.
+
+
+【Example 1】
+
+$ cat data
+0001 0000007 20060201 117 8335 -145
+0001 0000007 20060203 221 15470 0
+0001 0000007 20060205 85 5950 0
+0001 0000007 20060206 293 20527 -17
+0001 0000007 20060207 445 31150 0
+0002 0000007 20060208 150 11768 -1268
+0002 0000007 20060209 588 41160 0
+0002 0000007 20060210 444 31080 0
+
+$ yobi 3 data
+0001 0000007 20060201 3 117 8335 -145
+0001 0000007 20060203 5 221 15470 0
+0001 0000007 20060205 0 85 5950 0
+0001 0000007 20060206 1 293 20527 -17
+0001 0000007 20060207 2 445 31150 0
+0002 0000007 20060208 3 150 11768 -1268
+0002 0000007 20060209 4 588 41160 0
+0002 0000007 20060210 5 444 31080 0
+
+
+[Example 2]
+
+If the -e option is specified, the day of the week written in English will be inserted and output.
+
+$ yobi -e 3 data
+0001 0000007 20060201 Wed 117 8335 -145
+0001 0000007 20060203 Fri 221 15470 0
+0001 0000007 20060205 Sun85 5950 0
+0001 0000007 20060206 Mon 293 20527 -17
+0001 0000007 20060207 Tue 445 31150 0
+0002 0000007 20060208 Wed 150 11768 -1268
+0002 0000007 20060209 Thu 588 41160 0
+0002 0000007 20060210 Fri 444 31080 0
+
+
+[Example 3]
+
+The -j option inserts the day of the week in Japanese notation and outputs it.
+
+$ yobi -j 3 data
+0001 0000007 20060201 水 117 8335 -145
+0001 0000007 20060203 金 221 15470 0
+0001 0000007 20060205 日 85 5950 0
+0001 0000007 20060206 月 293 20527 -17
+0001 0000007 20060207 火 445 31150 0
+0002 0000007 20060208 水 150 11768 -1268
+0002 0000007 20060209 木 588 41160 0
+0002 0000007 20060210 金 444 31080 0
+
+
+[Example 4]
+
+Calculate the day of the week for the date specified in the argument with the -d option.
+
+$yobi -d 20080112
+6
+
+$yobi -de 20080112
+Sat
+
+$yobi -dj 20080112
+土
+
+
+【Related item】
+
+calclock, dayslash, mdate
+
+last modified: Fri Jul 15 16:49:46 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

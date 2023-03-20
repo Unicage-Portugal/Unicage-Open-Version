@@ -1,0 +1,144 @@
+Tukubai online command manual
+
+ratio
+
+【name】
+
+ratio : Composition ratio calculation
+
+[Format]
+
+Usage : ratio key=<key> [<file>]
+Option : ref=<ref> 	←Specify reference key
+         : -<s> 	←decimal precision
+         : +<n>h 	←Consider the first <n> lines as a header
+Version : Mon Nov 15 02:12:05 JST 2022
+
+【explanation】
+
+Within a group of records (rows) in <file> (or stdin) that have the
+same value in the <key> field , calculates the ratio that each row
+makes up out of the total of all rows in the group, and inserts the
+ratio as a new field immediately following the key field.
+Specify - as <file> or omit it to use the standard input.
+
+【Example 1】
+
+$ cat data	← File structure 1:Store_name 2:Date 3:Number_of_sales 4:Number_of_customers
+Store_A Day1 103 62 	
+Store_B Day1 210 113
+Store_C Day1 81 52
+Store_D Day1 75 48
+Store_E Day1 211 140
+
+Execute the following command to find the composition ratio of the sales volume (3rd field) 
+by store and insert it into the next field after the sales volume.
+
+$ ratio key=3 data | keta
+Store_A Day1 103 15.1 62 	←The composition ratio is in the 4th field
+Store_B Day1 210 30.9 113
+Store_C Day1 81 11.9 52
+Store_D Day1 75 11.0 48
+Store_E Day1 211 31.0 140
+
+
+[Example 2] ref option
+
+The field specified by ref= is used as a key field, and the composition ratio is calculated 
+and output in the lines with the same key field value. 
+Note that the key fields must be sorted in advance.
+
+$ cat data	← File structure 1:Store_name 2:Date 3:Number_of_sales 4:Number_of_customers
+Store_A Day1 103 62
+Store_A Day2 157 94
+Store_A Day3 62 30
+Store_B Day1 210 113
+Store_B Day2 237 121
+Store_B Day3 150 82
+Store_C Day1 81 52
+Store_C Day2 76 49
+Store_C Day3 38 21
+Store_D Day1 75 48
+Store_D Day2 72 42
+Store_D Day3 34 19
+Store_E Day1 211 140
+Store_E Day2 149 91
+Store_E Day3 120 73
+
+Calculate the composition ratio of the number of sales (third field) by store 
+for each day (second field).
+
+$ sort -k2,2 -k1,1 data | ratio ref=2 key=3 | keta
+Store_A Day1 103 15.1 62 	←Composition ratio of 4th field on 1st day
+Store_B Day1 210 30.9 113
+Store_C Day1 81 11.9 52
+Store_D Day1 75 11.0 48
+Store_E Day1 211 31.0 140
+Store_A Day2 157 22.7 94 	←Composition ratio of 4th field on 2nd day
+Store_B Day2 237 34.3 121
+Store_C Day2 76 11.0 49
+Store_D Day2 72 10.4 42
+Store_E Day2 149 21.6 91
+Store_A Day3 62 15.3 30 	← Composition ratio of 4th field on 3rd day
+Store_B Day3 150 37.1 82
+Store_C Day3 38 9.4 21
+Store_D Day3 34 8.4 19
+Store_E Day3 120 29.7 73
+
+
+[Example 3] +h option
+
+If you add the +<n>h option, the composition ratio is calculated by skipping the first <n> lines. 
+It is used when calculating data that already has headers such as item names in the first row. 
+The header of the newly added composition ratio field is @.
+
+$ cat data
+Store Date Number_of_sales Number_of_customers 	← Item name header
+Store_A Day1 103 62
+Store_B Day1 210 113
+Store_C Day1 81 52
+Store_D Day1 75 48
+Store_E Day1 211 140
+
+
+Skips the first line and calculate the composition ratio of the number of sales (3rd field) 
+by store and insert it into the field next to the number of sales.
+
+$ratio +h key=3 data | keta
+Store Date Number_of_sales @ Number_of_customers   ←"@" is inserted at added field
+Store_A Day1 103 15.1 62 	←The composition ratio is in the 4th field
+Store_B Day1 210 30.9 113
+Store_C Day1 81 11.9 52
+Store_D Day1 75 11.0 48
+Store_E Day1 211 31.0 140
+
+
+[Example 4] -<s> option
+
+You can specify the precision below the decimal point of the composition ratio with <value>.
+
+$ cat data
+Store_A Day1 103 62
+Store_B Day1 210 113
+Store_C Day1 81 52
+Store_D Day1 75 48
+Store_E Day1 211 140
+
+
+Calculate the composition ratio of the number of sales (3rd field) by store to 3 decimal places.
+
+$ ratio -3 key=3 data | keta
+Store_A Day1 103 15.147 62
+Store_B Day1 210 30.882 113
+Store_C Day1 81 11.912 52
+Store_D Day1 75 11.029 48
+Store_E Day1 211 31.029 140
+
+
+【Related item】
+
+kasan, plus, sm2, sm4, sm5, ysum
+
+last modified: MODIFIED
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2014 Universal Shell Programming Laboratory All Rights

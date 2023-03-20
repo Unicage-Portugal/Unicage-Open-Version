@@ -1,0 +1,151 @@
+Tukubai online command manual
+
+keycut
+
+【name】
+
+keycut : Split a file based on a key field (Key must be sorted)
+
+[Format]
+
+Usage : keycut [options] <filename> <file>
+Options : -d : delete key
+          -a : append file
+          -z : compression
+Version : Thu Jul 28 14:56:55 JST 2022
+Edition: 1
+
+【Explanation】
+
+Reads in <file> and splits it into multiple files where the key
+field specified in <filename> has the same values.
+
+For example, if you want to split the file into multiple files where
+the 2nd field contains the same value, specify the filename as
+"data.%2".  The names of the output files will be data (2nd field value). 
+
+Note that when using keycut, the key field values must be sorted in advance 
+(internally, when the key field changes, it is output to the file).
+The key field in <filename> is specified as %(field number), but substring specification 
+is also possible like %5.2 %5.1.3.
+
+
+[Example 1] Basic usage
+
+$ cat data
+01 Saitama_Prefecture 03 Kumagaya_City 82 0 23 84 10
+01 Saitama_Prefecture 01 Saitama_City 91 59 20 76 54
+02 Tokyo 04 Shinjuku_Ward 30 50 71 36 30
+02 Tokyo 05 Chuo_Ward 78 13 44 28 51
+03 Chiba_Prefecture 10 Chiba_City 52 91 44 9 0
+03 Chiba_Prefecture 12 Kashiwa_City 95 60 35 93 76
+04 Kanagawa_Prefecture 13 Yokohama_City 92 56 83 96 75
+04 Kanagawa_Prefecture 16 Odawara_City 45 21 24 39 03
+
+$ keycut data.%1 data
+
+$ ls -l data.*
+-rw-r--r-- 1 usp usp 87 2009-02-19 11:14 data.01 ←Split into 4 files
+-rw-r--r-- 1 usp usp 82 2009-02-19 11:14 data.02
+-rw-r--r-- 1 usp usp 77 2009-02-19 11:14 data.03
+-rw-r--r-- 1 usp usp 91 2009-02-19 11:14 data.04
+
+$ cat data.01
+01 Saitama_Prefecture 03 Kumagaya_City 82 0 23 84 10
+01 Saitama_Prefecture 01 Saitama_City 91 59 20 76 54
+
+$ cat data.02
+02 Tokyo 04 Shinjuku_Ward 30 50 71 36 30
+02 Tokyo 05 Chuo_Ward 78 13 44 28 51
+
+$ cat data.03
+03 Chiba_Prefecture 10 Chiba_City 52 91 44 9 0
+03 Chiba_Prefecture 12 Kashiwa_City 95 60 35 93 76
+
+$ cat data.04
+04 Kanagawa_Prefecture 13 Yokohama_City 92 56 83 96 75
+04 Kanagawa_Prefecture 16 Odawara_City 45 21 24 39 03
+
+
+[Example 2] Substring specification
+
+$ keycut data.%1.2.1 data
+
+$ ls -l data.*
+-rw-r--r-- 1 usp usp 87 2009-02-19 11:15 data.1
+-rw-r--r-- 1 usp usp 82 2009-02-19 11:15 data.2
+-rw-r--r-- 1 usp usp 77 2009-02-19 11:15 data.3
+-rw-r--r-- 1 usp usp 91 2009-02-19 11:15 data.4
+
+
+[Example 3] Example of using the -a option
+
+If you specify the -a option, the split destination file will be appended. 
+If the split destination file does not exist, it will be newly created. 
+If this option is not specified, the file will be overwritten.
+
+$ keycut data.%1 data
+
+$ keycut -a data.%1 data
+
+$ ls -l data.*
+-rw-r--r-- 1 usp usp 174 2009-02-19 11:16 data.01
+-rw-r--r-- 1 usp usp 164 2009-02-19 11:16 data.02
+-rw-r--r-- 1 usp usp 154 2009-02-19 11:16 data.03
+-rw-r--r-- 1 usp usp 182 2009-02-19 11:16 data.04
+
+$ cat data.01
+01 Saitama_Prefecture 03 Kumagaya_City 82 0 23 84 10
+01 Saitama_Prefecture 01 Saitama_City 91 59 20 76 54
+01 Saitama_Prefecture 03 Kumagaya_City 82 0 23 84 10
+01 Saitama_Prefecture 01 Saitama_City 91 59 20 76 54
+
+
+[Example 4] Example of using the -d option
+
+If you specify the -d option, lines without key fields will be created in the 
+split destination file. 
+Even if the key field specification is a substring specification such as %1.2.1, 
+the entire key field (the entire first field in this example) is removed.
+
+$ keycut -d data.%1 data
+
+$ ls -l data.*
+-rw-r--r-- 1 usp usp 81 2009-02-19 13:13 data.01
+-rw-r--r-- 1 usp usp 76 2009-02-19 13:13 data.02
+-rw-r--r-- 1 usp usp 71 2009-02-19 13:13 data.03
+-rw-r--r-- 1 usp usp 85 2009-02-19 13:13 data.04
+
+$ cat data.01
+Saitama_Prefecture 03 Kumagaya_City 82 0 23 84 10
+Saitama_Prefecture 01 Saitama_City 91 59 20 76 54
+
+
+[Example 5] Example of using the -z option
+
+If you specify the -z option, the output file will be in Gzip compressed format.
+
+$ keycut -z data.%1.gz data
+
+$ ls -l data.*
+-rw-r--r-- 1 usp usp 98 2009-02-19 13:17 data.01.gz
+-rw-r--r-- 1 usp usp 94 2009-02-19 13:17 data.02.gz
+-rw-r--r-- 1 usp usp 82 2009-02-19 13:17 data.03.gz
+-rw-r--r-- 1 usp usp 100 2009-02-19 13:17 data.04.gz
+
+$ gunzip < data.01.gz
+01 Saitama_Prefecture 03 Kumagaya_City 82 0 23 84 10
+01 Saitama_Prefecture 01 Saitama_City 91 59 20 76 54
+
+
+【remarks】
+
+If you use the -a option and -z option together, the compressed file will be 
+appended to the already existing compressed file. 
+The generated file can be expanded with the gunzip command, but it has not been 
+investigated whether it works correctly according to the specifications.
+
+
+last modified: Thu Aug 11 13:19:05 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

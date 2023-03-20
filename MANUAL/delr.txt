@@ -1,0 +1,45 @@
+Tukubai online command manual
+
+delr
+
+【name】
+
+delr : Output lines excluding lines whose fields match exactly
+
+[Format]
+
+Usage : delr <field> <str> <file>
+Version : Sun Nov 21 17:29:32 JST 2021
+           Open usp Tukubai (LINUX+FREEBSD/PYTHON2.4/UTF-8)
+Edition: 1
+
+【explanation】
+
+From the text data of the argument file, output excluding the lines where the specified field 
+exactly matches the specified string. 
+If the file name is omitted or "-", it will be input from the standard input.
+
+[Example 1] 
+Output excluding lines where the specified field exactly matches
+
+$ cat data
+0001 a
+0002 b
+0003 c
+0004 c
+
+$ delr 1 "0001" data
+0002 b
+0003 c
+0004 c
+
+
+[Example 2]
+
+$ delr 2 c data
+0001 a
+0002 b
+
+last modified: Fri Jul 15 15:42:38 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

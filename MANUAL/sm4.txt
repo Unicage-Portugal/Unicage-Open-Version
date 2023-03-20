@@ -1,0 +1,191 @@
+Tukubai online command manual
+
+sm4
+
+【name】
+
+sm4 : Inserts subtotal lines.
+
+[Format]
+
+Usage : sm4 [+h] <k1> <k2> <d1> <d2> <s1> <s2> <file>
+Version : Tue Oct 20 15:17:47 JST 2020
+Edition: 1
+
+【explanation】
+
+Inserts a total line for records in <file> that have the same key.
+Fields from <k1> to <k2> and are key fields, while fields from <d1>
+to <d2> are dummy fields -> they are not keys nor are they summed.
+Fields from <s1> to <s2> are the summed fields.  These fields are
+summed for rows with the same key field and a total line is inserted
+after the last line with the same key.  
+
+"@" characters are inserted in the dummy fields of the total row. 
+If you use sm4 repeatedly to insert subtotals and sub-subtotals then any record 
+where there is at least one field consists of only "@" will be excluded.  (Field that
+includes "@" and other character such as "usp@usp-lab.com" are not excluded.)
+
+No output is performed for fields that are not specified in either key or summary field ranges.
+
+
+【Example 1】
+
+$ cat data 
+01 Saitama_Prefecture 01 Saitama_City 91 59 20 76 54 
+01 Saitama_Prefecture 02 Kawagoe_City 46 39 8 5 21
+01 Saitama_Prefecture 03 Kumagaya_City 82 0 23 84 10
+02 Tokyo 04 Shinjuku_Ward 30 50 71 36 30
+02 Tokyo 05 Chuo_Ward 78 13 44 28 51
+02 Tokyo 06 Minato_Ward 58 71 20 10 6
+02 Tokyo 07 Hachioji_City 82 79 16 21 80
+02 Tokyo 08 Tachikawa_City 50 2 33 15 62
+03 Chiba_Prefecture 09 Chiba_City 52 91 44 9 0
+03 Chiba_Prefecture 10 Ichikawa_City 60 89 33 18 6
+03 Chiba_Prefecture 11 Kashiwa_City 95 60 35 93 76
+04 Kanagawa_Prefecture 12 Yokohama_City 92 56 83 96 75
+04 Kanagawa_Prefecture 13 Kawasaki_City 30 12 32 44 19
+04 Kanagawa_Prefecture 14 Atsugi_City 48 66 23 71 24
+
+
+Output subtotals by prefecture.
+
+$ sm4 1 2 3 4 5 NF data
+01 Saitama_Prefecture 01 Saitama_City 91 59 20 76 54
+01 Saitama_Prefecture 02 Kawagoe_City 46 39 8 5 21
+01 Saitama_Prefecture 03 Kumagaya_City 82 0 23 84 10
+01 Saitama_Prefecture @@ @@@@@@@@@@ 219 98 51 165 85
+02 Tokyo 04 Shinjuku_Ward 30 50 71 36 30
+02 Tokyo 05 Chuo_Ward 78 13 44 28 51
+02 Tokyo 06 Minato_Ward 58 71 20 10 6
+02 Tokyo 07 Hachioji_City 82 79 16 21 80
+02 Tokyo 08 Tachikawa_City 50 2 33 15 62
+02 Tokyo @@ @@@@@@@@@@ 298 215 184 110 229
+03 Chiba_Prefecture 09 Chiba_City 52 91 44 9 0
+03 Chiba_Prefecture 10 Ichikawa_City 60 89 33 18 6
+03 Chiba_Prefecture 11 Kashiwa_City 95 60 35 93 76
+03 Chiba_Prefecture @@ @@@@@@@@@@ 207 240 112 120 82
+04 Kanagawa_Prefecture 12 Yokohama_City 92 56 83 96 75
+04 Kanagawa_Prefecture 13 Kawasaki_City 30 12 32 44 19
+04 Kanagawa_Prefecture 14 Atsugi_City 48 66 23 71 24
+04 Kanagawa_Prefecture @@ @@@@@@@@@@ 170 134 138 211 118
+
+
+[Example 2]
+
+Give subtotals and mid-totals.
+
+$ cat data
+01 Kanto_area 01 Saitama_Prefecture 01 Saitama_City 91 59 20 76 54
+01 Kanto_area 01 Saitama_Prefecture 03 Kumagaya_City 82 0 23 84 10
+01 Kanto_area 02 Tokyo 04 Shinjuku_Ward 30 50 71 36 30
+01 Kanto_area 02 Tokyo 05 Chuo_Ward 78 13 44 28 51
+01 Kanto_area 02 Tokyo 07 Hachioji 82 79 16 21 80
+02 Kansai_area 01 Osaka_prefecture 01 Osaka_city 91 59 20 76 54
+02 Kansai_area 01 Osaka_prefecture 02 Yao_City 46 39 8 5 21
+02 Kansai_area 01 Osaka_prefecture 03 Kawanishi_City 82 0 23 84 10
+02 Kansai_area 02 Hyogo_prefecture 04 Kobe_City 30 50 71 36 30
+02 Kansai_area 02 Hyogo_prefecture 05 Himeji_City 78 13 44 28 51
+02 Kansai_area 02 Hyogo_prefecture 06 Akashi_City 58 71 20 10 6
+02 Kansai_area 02 Hyogo_prefecture 07 Kakogawa_City 82 79 16 21 80
+02 Kansai_area 02 Hyogo_prefecture 08 Ashiya_City 50 2 33 15 62
+02 Kansai_area 03 Kyoto_prefecture 09 Kyoto_City 52 91 44 9 0
+02 Kansai_area 03 Kyoto_prefecture 10 Maizuru_City 60 89 33 18 6
+
+$ sm4 1 4 5 6 7 11 data > data2
+
+$ cat data2
+01 Kanto_area 01 Saitama_Prefecture 01 Saitama_City 91 59 20 76 54
+01 Kanto_area 01 Saitama_Prefecture 03 Kumagaya_City 82 0 23 84 10
+01 Kanto_area 01 Saitama_Prefecture @@ @@@@@@@@@@ 173 59 43 160 64
+01 Kanto_area 02 Tokyo 04 Shinjuku_Ward 30 50 71 36 30
+01 Kanto_area 02 Tokyo 05 Chuo_Ward 78 13 44 28 51
+01 Kanto_area 02 Tokyo 07 Hachioji 82 79 16 21 80
+01 Kanto_area 02 Tokyo @@ @@@@@@@@@@ 190 142 131 85 161
+02 Kansai_area 01 Osaka_prefecture 01 Osaka_City 91 59 20 76 54
+02 Kansai_area 01 Osaka_prefecture 02 Yao_City 46 39 8 5 21
+02 Kansai_area 01 Osaka_prefecture 03 Kawanishi_City 82 0 23 84 10
+02 Kansai_area 01 Osaka_prefecture @@ @@@@@@@@@@ 219 98 51 165 85
+02 Kansai_area 02 Hyogo_prefecture 04 Kobe_City 30 50 71 36 30
+02 Kansai_area 02 Hyogo_prefecture 05 Himeji_City 78 13 44 28 51
+02 Kansai_area 02 Hyogo_prefecture 06 Akashi_City 58 71 20 10 6
+02 Kansai_area 02 Hyogo_prefecture 07 Kakogawa_City 82 79 16 21 80
+02 Kansai_area 02 Hyogo_prefecture 08 Ashiya_City 50 2 33 15 62
+02 Kansai_area 02 Hyogo_prefecture @@ @@@@@@@@@@ 298 215 184 110 229
+02 Kansai_area 03 Kyoto_prefecture 09 Kyoto_City 52 91 44 9 0
+02 Kansai_area 03 Kyoto_prefecture 10 Maizuru_City 60 89 33 18 6
+02 Kansai_area 03 Kyoto_prefecture @@ @@@@@@@@@@ 112 180 77 27 6
+
+$ sm4 1 2 3 6 7 11 data2
+01 Kanto_area 01 Saitama_Prefecture 01 Saitama_City 91 59 20 76 54
+01 Kanto_area 01 Saitama_Prefecture 03 Kumagaya_City 82 0 23 84 10
+01 Kanto_area 01 Saitama_Prefecture @@ @@@@@@@@@@ 173 59 43 160 64
+01 Kanto_area 02 Tokyo 04 Shinjuku_Ward 30 50 71 36 30
+01 Kanto_area 02 Tokyo 05 Chuo_Ward 78 13 44 28 51
+01 Kanto_area 02 Tokyo 07 Hachioji 82 79 16 21 80
+01 Kanto_area 02 Tokyo @@ @@@@@@@@@@ 190 142 131 85 161
+01 Kanto_area @@ @@@@@@ @@ @@@@@@@@@@ 363 201 174 245 225
+02 Kansai_area 01 Osaka_prefecture 01 Osaka_City 91 59 20 76 54
+02 Kansai_area 01 Osaka_prefecture 02 Yao_City 46 39 8 5 21
+02 Kansai_area 01 Osaka_prefecture 03 Kawanishi_City 82 0 23 84 10
+02 Kansai_area 01 Osaka_prefecture @@ @@@@@@@@@@ 219 98 51 165 85
+02 Kansai_area 02 Hyogo_prefecture 04 Kobe_City 30 50 71 36 30
+02 Kansai_area 02 Hyogo_prefecture 05 Himeji_City 78 13 44 28 51
+02 Kansai_area 02 Hyogo_prefecture 06 Akashi_City 58 71 20 10 6
+02 Kansai_area 02 Hyogo_prefecture 07 Kakogawa_City 82 79 16 21 80
+02 Kansai_area 02 Hyogo_prefecture 08 Ashiya_City 50 2 33 15 62
+02 Kansai_area 02 Hyogo_prefecture @@ @@@@@@@@@@ 298 215 184 110 229
+02 Kansai_area 03 Kyoto_prefecture 09 Kyoto_City 52 91 44 9 0
+02 Kansai_area 03 Kyoto_prefecture 10 Maizuru_City 60 89 33 18 6
+02 Kansai_area 03 Kyoto_prefecture @@ @@@@@@@@@@ 112 180 77 27 6
+02 Kansai_area @@ @@@@@@@@@@@@@@@@ @@ @@@@@@@@@@ 629 493 312 302 320
+
+
+[Example 3]
+
+If there is no subkey, the following execution result is obtained.
+
+$ cat data
+Saitama_Prefecture 91 59 20 76 54
+Saitama_Prefecture 46 39 8 5 21
+Saitama_Prefecture 82 0 23 84 10
+Tokyo 30 50 71 36 30
+Tokyo 78 13 44 28 51
+Tokyo 58 71 20 10 6
+Tokyo 82 79 16 21 80
+Tokyo 50 2 33 15 62
+Chiba_Prefecture 52 91 44 9 0
+Chiba_Prefecture 60 89 33 18 6
+Chiba_Prefecture 95 60 35 93 76
+Kanagawa_Prefecture 92 56 83 96 75
+Kanagawa_Prefecture 30 12 32 44 19
+Kanagawa_Prefecture 48 66 23 71 24
+
+$ sm4 1 1 x x 2 6 data
+Saitama_Prefecture 91 59 20 76 54
+Saitama_Prefecture 46 39 8 5 21
+Saitama_Prefecture 82 0 23 84 10
+@@@@@@@@@@@@@@@@@@ 219 98 51 165 85
+Tokyo 30 50 71 36 30
+Tokyo 78 13 44 28 51
+Tokyo 58 71 20 10 6
+Tokyo 82 79 16 21 80
+Tokyo 50 2 33 15 62
+@@@@@ 298 215 184 110 229
+Chiba_Prefecture 52 91 44 9 0
+Chiba_Prefecture 60 89 33 18 6
+Chiba_Prefecture 95 60 35 93 76
+@@@@@@@@@@@@@@@@ 207 240 112 120 82
+Kanagawa_Prefecture 92 56 83 96 75
+Kanagawa_Prefecture 30 12 32 44 19
+Kanagawa_Prefecture 48 66 23 71 24
+@@@@@@@@@@@@@@@@@@@ 170 134 138 211 118
+
+
+【Related item】
+
+kasan, plus, ratio, sm2, sm5, ysum
+
+last modified: Fri Jul 15 15:42:38 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

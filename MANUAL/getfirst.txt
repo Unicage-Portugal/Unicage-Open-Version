@@ -1,0 +1,102 @@
+Tukubai online command manual
+
+getfirst
+
+【name】
+
+getfirst : print the first line with the same key
+
+[Format]
+
+Usage : getfirst [+ng[<fd>]] <n1> <n2> <file>
+Version : Thu Dec 15 13:46:38 JST 2011
+Edition: 1
+
+【explanation】
+
+If there are multiple lines with the same key field value in the argument file or 
+standard input text data, extract and output only the first line for each key field.
+
+
+【Example 1】
+
+$ cat data 	←Original data (1:Product_code 2:Product_name 3:Sales 4:date 5:Number_of_sales)
+0000007 Celery 20060201 117
+0000007 Celery 20060202 136
+0000007 Celery 20060203 221
+0000017 Nerima radish 20060201 31
+0000017 Nerima radish 20060202 127
+0000017 Nerima radish 20060203 514
+0000021 Mandarin Orange 20060201 90
+0000021 Mandarin Orange 20060202 324
+0000021 Mandarin Orange 20060203 573
+0000025 Prince melon 20060201 129
+0000025 Prince melon 20060202 493
+0000025 Prince melon 20060203 391
+0000030 potato 20060201 575
+0000030 potato 20060202 541
+0000030 potato 20060203 184
+
+
+$ getfirst 1 2 data 	← Output only the first line of the same product_code/product_name
+0000007 Celery 20060201 117
+0000017 Nerima radish 20060201 31
+0000021 Mandarin Orange 20060201 90
+0000025 Prince melon 20060201 129
+0000030 potato 20060201 575
+
+
+[Example 2]
+
+If you specify the "+ng" option, all lines with the same key field value except the first line 
+will be output to the standard error output.
+
+$ getfirst +ng 1 2 data > /dev/null 2> data2
+$ cat data2
+0000007 Celery 20060202 136
+0000007 Celery 20060203 221
+0000017 Nerima radish 20060202 127
+0000017 Nerima radish 20060203 514
+0000021 Mandarin Orange 20060202 324
+0000021 Mandarin Orange 20060203 573
+0000025 Prince melon 20060202 493
+0000025 Prince melon 20060203 391
+0000030 potato 20060202 541
+0000030 potato 20060203 184
+
+
+[Example 3]
+
+If <fd> is specified for the +ng option, output to <fd> is executed instead of
+standard error output.
+
+$ getfirst +ng4 1 2 data > /dev/null 4> data2
+$ cat data2
+0000007 Celery 20060202 136
+0000007 Celery 20060203 221
+0000017 Nerima radish 20060202 127
+0000017 Nerima radish 20060203 514
+0000021 Mandarin Orange 20060202 324
+0000021 Mandarin Orange 20060203 573
+0000025 Prince melon 20060202 493
+0000025 Prince melon 20060203 391
+0000030 potato 20060202 541
+0000030 potato 20060203 184
+
+
+【caution】
+
+Consecutive whitespace is treated as a single space in field splitting. 
+Also, leading whitespace is ignored. For example, if the key field specifications are 1 and 2, 
+the next two lines are considered to have the same key field.
+
+0000007 Celery 20060202 136
+0000007 Celery 20060203 221
+
+【Related item】
+
+ctail, getlast, tcat, ycat
+
+last modified: Fri Jul 15 15:42:38 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

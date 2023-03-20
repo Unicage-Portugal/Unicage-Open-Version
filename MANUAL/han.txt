@@ -1,0 +1,78 @@
+Tukubai online command manual
+
+han
+
+【name】
+
+han : Convert to half-width
+
+[Format]
+
+Usage : han f1 f2 .. [file]
+           han -d string
+Version : Oct 20 17:32:09 JST 2022
+Edition: 1
+
+【explanation】
+
+Converts all full-width spaces, full-width alphanumeric characters, and katakana characters 
+in the argument file or standard input text data to half-width and outputs them.
+
+By using the -d option, you can change the full-width part of the string specified in 
+the argument to half-width and output it.
+
+If no field is specified, the entire line will be half-width.
+0 means all fields in the field specification.
+If the command input is "han" and there are no parameters, display the syntax of the 
+command and exit.
+
+
+【Example 1】
+Converts the contents of the specified field in the argument file to half-width.
+
+$ cat data
+これは データ である。
+T h i s i s d a t a
+1234 567 890
+
+$ han 1 2 3 data
+これは ﾃﾞｰﾀ である｡
+This is data
+1234 567 890
+
+
+[Example 2]
+ A full-width space becomes a half-width space.
+
+$ cat data2
+これはデータである。
+全角　スペース　データも変換する。
+1 2 3 456 7 8 9
+
+
+$ han data2
+これはﾃﾞｰﾀである｡
+全角 ｽﾍﾟｰｽ ﾃﾞｰﾀも変換する｡
+123456789
+
+
+[Example 3]
+
+$ han -d カタカナＡＢＣ１２３
+ｶﾀｶﾅABC123
+
+
+【caution】
+
+If the last run-time parameter is the name of an existing file, open it as the input file.
+This file name may be a string of numbers such as "10".
+If the last file name is not an existing file name, it is processed as a field, 
+and standard input (stdin) is used as an abbreviated input file name.
+
+【Related item】
+
+zen
+
+last modified: Fri Oct 21 08:21:02 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

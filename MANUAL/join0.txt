@@ -1,0 +1,211 @@
+Tukubai online command manual
+
+join0
+
+【name】
+
+join0 : Join transaction file lines whose key fields match the master file
+extract
+
+[Format]
+
+Usage : join0 [+ng[<fd>]] key=<n> <master> [<tran>]
+Version : Sun Jun 19 23:55:51 JST 2022
+Edition: 1
+
+【explanation】
+
+Selects all lines from <tran> where the <key> fields match
+corresponding fields of <master>.
+
+The key fields in <master> and <tran> MUST be sorted in ascending
+order. 
+
+Also, the key fields in <master> must only contain unique values.  
+The key fields in <tran> do not have this requirement; multiple records
+in <tran> can have the same value in the key fields.
+
+If - is specified for master, the standard input is used as the master file. 
+If tran is not specified or - is specified, the standard input is the transaction file.
+
+Multiple fields can be specified as keys.
+<key> can be specified as:
+key=3     The third field in the transaction file
+key=3/5   The third, fourth and fifth field in the transaction
+          file (the first, second and third field in the master file)
+key=4@3   The fourth and third field in the transaction file
+          the second and first field in the master file)
+key=NF    Last field in the transaction file (first field in the
+          master file)
+key=NF-3  Third to last field in the transaction file (first field
+          in the master file)
+
+Field positions can be specified in the form NF or NF-x using NF, 
+which means number of fields in a line.
+
+If there is even one 0 in the key specification, it means that all fields are specified.
+
+
+With the +ng option, output matching lines to the standard output file and non-matching lines 
+to the file with file descriptor <fd>. 
+If <fd> is omitted, output to the standard error output file.
+
+Unaligned keys in tran cannot be processed by join0. 
+In that case, align the tran once and then process it with join0, or use cjoin0 instead.
+
+
+[Example 1] Basic pattern
+
+Extract the data of 4 people registered in master from grade file kekka.
+
+$ cat master
+0000003 Sugiyama______ 26 F
+0000005 Sakimura______ 50 F
+0000007 Kajikawa______ 42 F
+0000010 Yanagimoto______ 50 F
+
+$ cat kekka
+0000000 91 59 20 76 54
+0000001 46 39 8 5 21
+0000003 30 50 71 36 30
+0000004 58 71 20 10 6
+0000005 82 79 16 21 80
+0000007 50 2 33 15 62
+0000008 52 91 44 9 0
+0000009 60 89 33 18 6
+0000010 95 60 35 93 76
+0000011 92 56 83 96 75
+
+Only extract lines where the first field of kekka exists in the master file.
+
+$ join0 key=1 master kekka
+0000003 30 50 71 36 30
+0000005 82 79 16 21 80
+0000007 50 2 33 15 62
+0000010 95 60 35 93 76
+
+
+[Example 2]
+
+Consecutive keys can be specified for multiple fields in order from the left. 
+For example, to extract only the lines where the field key exists in the order of the
+2nd field and the 3rd field in the master file, it will be as follows.
+
+$ cat master
+A 0000003 Sugiyama______ 26 F
+A 0000005 Sakimura______ 50 F
+B 0000007 Kajikawa______ 42 F
+C 0000010 Yanagimoto______ 50 F
+
+$ cat kekka
+1 A 0000000 91 59 20 76 54
+2 A 0000001 46 39 8 5 21
+3 A 0000003 30 50 71 36 30
+4 A 0000004 58 71 20 10 6
+5 A 0000005 82 79 16 21 80
+6 B 0000007 50 2 33 15 62
+7 B 0000008 52 91 44 9 0
+8 C 0000009 60 89 33 18 6
+9 C 0000010 95 60 35 93 76
+10 C 0000011 92 56 83 96 75
+
+$ join0 key=2/3 master kekka > data
+3 A 0000003 30 50 71 36 30
+5 A 0000005 82 79 16 21 80
+6 B 0000007 50 2 33 15 62
+9 C 0000010 95 60 35 93 76
+
+
+It is also possible to specify multiple non-consecutive fields as keys from the left. 
+In this case, specify multiple key fields by connecting them with @.
+
+$ join0 key=3@1 master tran
+
+
+[Example 3] +ng option
+
+It is also possible to extract lines of "tran" whose keys do not match master. 
+Lines that match the key are printed to standard output, 
+lines that do not match are printed to standard error.
+
+$ cat master
+0000003 Sugiyama______ 26 F
+0000005 Sakimura______ 50 F
+0000007 Kajikawa______ 42 F
+0000010 Yanagimoto______ 50 F
+
+$ cat kekka
+0000000 91 59 20 76 54
+0000001 46 39 8 5 21
+0000003 30 50 71 36 30
+0000004 58 71 20 10 6
+0000005 82 79 16 21 80
+0000007 50 2 33 15 62
+0000008 52 91 44 9 0
+0000009 60 89 33 18 6
+0000010 95 60 35 93 76
+0000011 92 56 83 96 75
+
+$ join0 +ng key=1 master kekka > ok-data 2> ng-data
+
+$ cat ok-data 	← matched data
+0000003 30 50 71 36 30
+0000005 82 79 16 21 80
+0000007 50 2 33 15 62
+0000010 95 60 35 93 76
+
+$ cat ng-data 	← unmatched data
+0000000 91 59 20 76 54
+0000001 46 39 8 5 21
+0000004 58 71 20 10 6
+0000008 52 91 44 9 0
+0000009 60 89 33 18 6
+0000011 92 56 83 96 75
+
+
+[Example 4]
+
+You can read master or tran from standard input by changing the file name to "-" . 
+Same for join1 and join2. Even if you omit the - in tran, it reads tran from standard input.
+
+$ cat master | join0 key=1 -tran
+
+$ cat tran | join0 key=1 master -
+
+$ cat tran | join0 key=1 master ← the "-" can be omitted
+
+
+[NOTE 1] 
+Comment for +ng option (Same for join1)
+If you want to connect the mismatched data to the next command with a pipe, describe it as follows.
+$ join0 +ng key=1 master tran 2>&1 1> ok-data | next command
+
+
+If you want to output only non-matching data, output matching data to /dev/null.
+$ join0 +ng key=1 master tran > /dev/null 2> ng-data
+
+
+[NOTE 2]
+
+join0 and join1 output the records in "tran" whose key field matches
+master, but even after all rows of master have been read, the
+remaining rows in tran are read to the end (read and discarded).
+This is designed to avoid jamming the pipe.
+
+$ cat bigfile | join0 key=1 master > ok-data
+
+
+【remarks】
+
+The maximum number of key fields is 128 fields in total, and a maximum of 
+256 [bytes] can be specified for each key field.
+
+
+【Related item】
+
+cjoin0, cjoin1, cjoin2, join1, join2, loopj, loopx, up3
+
+
+last modified: Fri Jul 15 15:42:38 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

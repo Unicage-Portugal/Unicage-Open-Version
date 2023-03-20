@@ -1,0 +1,179 @@
+Tukubai online command manual
+
+kasan
+
+【name】
+
+kasan : Cumulative sum of a key field
+
+[Format]
+
+Usage : kasan [+r] [ref=<ref>] key=<n> [<file>]
+Version : Mon Nov 15 02:12:05 JST 2022
+
+【Explanation】
+
+Adds the value of the specified field in the argument file or standard input text data, 
+and inserts it into the field next to the specified field. 
+It is used when calculating the cumulative value.
+
+Specify - as <file> or omit it to use the standard input.
+
+
+【Example 1】
+
+Calculate the cumulative purchase value for each store. 
+Here, the value of the 4th field is added and inserted into the 5th field.
+
+$ cat data 	← File layout: 1:Store_name 2:Date 3:Number_of_sales 4:Number_of_purchases
+Store_A 01/01/2023 103 62 
+Store_A 02/01/2023 157 94
+Store_A 03/01/2023 62 30
+Store_A 04/01/2023 131 84
+Store_A 05/01/2023 189 111
+Store_A 06/01/2023 350 20
+Store_A 07/01/2023 412 301
+
+After applying kasan on the 4th field, the output layout will be: 
+1:Store_name 2:Date 3:Number_of_sales 4:Number_of_purchases 5:Cumulative_sum_of_purchases
+
+$ kasan key=4 data 
+Store_A 01/01/2023 103 62 62
+Store_A 02/01/2023 157 94 156
+Store_A 03/01/2023 62 30 186
+Store_A 04/01/2023 131 84 270
+Store_A 05/01/2023 189 111 381
+Store_A 06/01/2023 350 20 401
+Store_A 07/01/2023 412 301 702
+
+
+[Example 2]
+
+To reset the addition when the value of a field changes, 
+specify the field that is the key for resetting with ref=. 
+For example, when calculating the cumulative number of purchases by store, 
+the addition is reset each time the first field is changed as follows.
+
+A numerical value, a range (/), and NF NF-<n> can be specified with ref=<ref>.
+
+$ cat data 	← File layout: 1:Store_name 2:Date 3:Number_of_sales 4:Number_of_purchases
+Store_A 01/01/2023 103 62 
+Store_A 02/01/2023 157 94
+Store_A 03/01/2023 62 30
+Store_A 04/01/2023 131 84
+Store_B 01/01/2023 210 113
+Store_B 02/01/2023 237 121
+Store_B 03/01/2023 150 82
+Store_B 04/01/2023 198 105
+Store_C 01/01/2023 81 52
+Store_C 02/01/2023 76 49
+Store_C 03/01/2023 38 21
+Store_C 04/01/2023 81 48
+
+$ kasan ref=1 key=4 data
+Store_A 01/01/2023 103 62 62
+Store_A 02/01/2023 157 94 156
+Store_A 03/01/2023 62 30 186
+Store_A 04/01/2023 131 84 270
+Store_B 01/01/2023 210 113 113 ←Reset cumulative addition
+Store_B 02/01/2023 237 121 234
+Store_B 03/01/2023 150 82 316
+Store_B 04/01/2023 198 105 421
+Store_C 01/01/2023 81 52 52 ←Reset cumulative addition
+Store_C 02/01/2023 76 49 101
+Store_C 03/01/2023 38 21 122
+Store_C 04/01/2023 81 48 17
+
+
+[Example 3]
+
+Use the +r option to replace the original data field with its added value and output it. 
+For example, if the number of purchases is to be replaced with the cumulative number of purchases,
+in this case the added value of the 4th field should be output to the 4th field.
+
+$ cat data 	← File layout: 1:Store_name 2:Date 3:Number_of_sales 4:Number_of_purchases
+Store_A 01/01/2023 103 62
+Store_A 02/01/2023 157 94
+Store_A 03/01/2023 62 30
+Store_A 04/01/2023 131 84
+Store_A 05/01/2023 189 111
+Store_A 06/01/2023 350 20
+Store_A 07/01/2023 412 301
+
+After applying kasan on the 4th field with the + option, the output layout will be: 
+1:Store_name 2:Date 3:Number_of_sales 4:Cumulative_sum_of_purchases
+
+$ kasan +r key=4 data
+Store_A 01/01/2023 103 62
+Store_A 02/01/2023 157 156
+Store_A 03/01/2023 62 186
+Store_A 04/01/2023 131 270
+Store_A 05/01/2023 189 381
+Store_A 06/01/2023 350 401
+Store_A 07/01/2023 412 702
+
+
+[Example 4]
+
+When adding data with a decimal point, it will be output according to the maximum number 
+of decimal digits in the previous line.
+
+$ cat data
+A 1
+A 1.2
+A 1.23
+B 2
+B 2.34
+B 3
+
+$ kasan ref=1 key=2 data
+A 1 1
+A 1.2 2.2
+A 1.23 3.43
+B 2 2
+B 2.34 4.34
+B 3 7.34
+
+
+[Example 5]
+
+Key=<pos> can be numeric, range (/), enumeration (@), NF NF-<n>.
+
+$ kasan key=1 data
+
+To add each field from the 2nd to the 3rd and insert the added value immediately 
+after each field, execute the command as follows.
+
+$ cat data
+A 1 2
+A 3 4
+A 5 6
+
+After applying kasan key=2/3, the output layout will be the following:
+1:Item 2:Value_1 3:Cumulative_sum_of_Value_1 4:Value_2 5:Cumulative_sum_of_Value_2
+
+$ kasan key=2/3 data 
+A 1 1 2 2
+A 3 4 4 6
+A 5 9 6 12
+
+
+To add each field of the 2nd and 4th fields and insert the added value immediately 
+after each field, execute the command as follows.
+
+$ kasan key=2@4 data
+
+NF can also be specified as follows.
+
+$ kasan key=NF data
+
+$ kasan key=NF-2 data
+
+
+【Related item】
+
+plus, ratio, sm2, sm4, sm5, ysum
+
+last modified: MODIFIED
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2014 Universal Shell Programming Laboratory All Rights

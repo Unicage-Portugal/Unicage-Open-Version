@@ -1,0 +1,84 @@
+Tukubai online command manual
+
+join1x
+
+【name】
+
+join1x : Join master file to transaction file (only matching lines are joined),
+	 but the master file can have records that share the same key value.
+
+[Format]
+
+Usage : join1x [+ng[<fd>]] key=<n> <master> [<tran>]
+Version : Fri Jul 22 01:09:14 JST 2022
+
+【Explanation】
+
+Only those rows in the text file <tran> where the <key> fields of
+<tran> match corresponding fields of <master> are selected,
+then joined with the fields in <master> and output.  The join occurs
+by adding the fields from <master> immediately after the key field
+in <tran>.  However, the difference between this command and join1
+is that there may be more than one record in <master> that share the
+same key value.  (join1 requires the key fields in <master> to be
+unique.)
+
+The files are joined for every combination of <master> and <tran>
+records where the key fields have the same value.  
+Both files must be sorted in ascending order ("master" on the first field and 
+"tran" on the key fields.)
+
+If there are multiple key fields, the <master> key field will be the key field 
+in the same order as the <tran> key field, with the smallest field slid to 1.
+For example, when key=3/5, sequence = 3 consecutive fields key, 
+so <master> is 1 to 3 consecutive fields, that is, the 1st to 3rd fields are keys.
+
+If - is specified for master, the standard input is used as the master file. 
+If tran is not specified or - is specified, the standard input is the transaction file.
+
+With the +ng option, output matching lines to the standard output file and non-matching lines 
+to the file with file descriptor <fd>. 
+If <fd> is omitted, output to the standard error output file.
+
+The difference from join1 is that records with the same key field value in the master file
+The point is that multiple nodes can exist. Keys for master and transaction files
+Records with the same field value are concatenated by total multiplication and output.
+
+[Example 1]
+
+(master: master)
+$ cat master
+1 Tokyo_1
+1 Tokyo_2
+2 Osaka_1
+2 Osaka_2
+
+(transaction: tran)
+$ cat tran
+1 Shinjuku
+1 Ueno
+2 Umeda
+2 Namba
+2 Kyobashi
+3 gold mine
+3 Sakae
+3 Atsuta
+4 Hakata
+4 Tenjin
+
+$ join1x key=1 master tran > data
+$ cat data
+1 Tokyo_1 Shinjuku
+1 Tokyo_2 Shinjuku
+1 Tokyo_1 Ueno
+1 Tokyo_2 Ueno
+2 Osaka_1 Umeda
+2 Osaka_2 Umeda
+2 Osaka_1 Namba
+2 Osaka_2 Namba
+2 Osaka_1 Kyobashi
+2 Osaka_2 Kyobashi
+
+last modified: Fri Aug 12 12:56:05 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

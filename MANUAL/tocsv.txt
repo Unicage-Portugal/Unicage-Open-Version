@@ -1,0 +1,68 @@
+Tukubai online command manual
+
+tocsv
+
+【name】
+
+tocsv : convert a space-separated file to a CSV file
+
+[Format]
+
+Usage : tocsv [<f1> <f2> ... <file>]
+Option : -s<space_string>
+           -n<null_string>
+Version : Tue Sep 15:22:31 JST 2022
+
+【explanation】
+Convert a space delimited file to a CSV file. 
+The fields specified as f1, f2, f3... are considered "String 1" and are enclosed in
+quotes when converted.
+Fields not specified are considered "String 0" and are not enclosed in quotes.
+If you don't specify a file name, or if it's "-", it expects standard input.
+
+【specification】
+
+1.The string "_" by itself is converted to a null string.
+ (-n option changes "_")
+2.The string \c is converted to c.
+3.The backslash character \ by itself is converted to a space
+4.The underscore is converted to a space if it occurs in a string.
+ (-s option changes "_")
+5.\n at the end of a line is converted automatically to \r\n.
+6.Within String 1, " is converted to "".
+
+
+【Example 1】
+
+$ cat data
+a_\_\b_cb\_c"
+
+$ tocsv 1/NF data
+"a","","_"," ","b c","b_c",""""
+
+
+[Example 2]
+
+$ tocsv data
+a,,_, ,b c,b_c,"
+
+
+[Example 3]
+
+$ echo the_first @ | tocsv -n@
+"the first",""
+
+
+[Example 4]
+
+$ echo the_first this_is_apple | tocsv -s_apple
+"the first", "this is"
+
+
+【Related item】
+
+fromcsv
+
+last modified: Tue Sep 13 17:30:27 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

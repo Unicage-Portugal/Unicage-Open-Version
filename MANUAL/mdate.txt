@@ -1,0 +1,133 @@
+Tukubai online command manual
+
+mdate
+
+【name】
+
+mdate : date, week and month handling
+
+[Format]
+
+Usage:
+
+DIRECT-MODE
+    Date mdate -y <yyyymmdd> 		  : day of the week
+         mdate -e <yyyywwdd>/±<dif> 	  : Continuously output dates up to dif days ahead
+         mdate -e <yyyymmdd1> <yyyymmdd2> : Output date range continuously
+         mdate <yyyywwdd>/±<dif> 	  : date ahead of dif days
+         mdate <yyyymmdd1> <yyyymmdd2> 	  : date difference
+         mdate <yyyymm>m/±<dif> 	  : month ahead of dif months
+         mdate -e <yyyymm>m/±<dif> 	  : Continuously output months up to dif month ahead
+         mdate <yyyymm1>m <yyyymm2>m 	  : Month difference
+         mdate -ly <yyyymm>m 		  : previous month
+         mdate today 			  : Today's date
+
+FILTER-MODE
+    Date mdate -f -y <f> 		: day of the week
+         mdate -f -e <f>/±<dif> 	: expand to dif days ahead
+         mdate -f -e <f1> <f2> 		: expand between dates
+         mdate -f <f>/±<dif> 		: date dif days ahead
+         mdate -f <f1> <f2> 		: date difference
+         mdate -f <f1> ±<f2> 		: add dates
+         mdate -f -e <f1> ±<f2> 	: add or expand dates
+         mdate -f -ly <f> 		: previous day
+
+ Monthly mdate -f -d <f>m 		: Output date for one month
+         mdate -f <f>m/±<dif> 		: month ahead of dif months
+         mdate -f -e <f>m ±<dif> 	: expand to month after dif month
+         mdate -f <f1>m <f2>m 		: month difference
+         mdate -f -e <f1>m <f2>m 	: month expansion
+         mdate -f <f>m ±<dif> 		: add months
+         mdate -f -e <f>m ±<dif> 	: addition expansion of months
+         mdate -f -ly <f>m 		: previous month
+
+
+[Example 1] Dif destination date and month information output
+
+$mdate 20090912/+5
+20090917
+
+$mdate 200909m/+5
+201002
+
+
+[Example 2] Output continuous date and month information up to the dif destination
+
+$mdate -e 20090912/+5
+20090912 20090913 20090914 20090915 20090916 20090917
+
+$mdate -e 200909m/+5
+200909 200910 200911 200912 201001 201002
+
+
+[Example 3] Output the difference between date and month
+
+$mdate 20090917 20090912
+5
+
+$mdate 201002m 200909m
+5
+
+
+[Example 4] Continuous output of date and month range
+
+$ mdate -e 20090912 20090917
+20090912 20090913 20090914 20090915 20090916 20090917
+
+$mdate -e 200909m 201002m
+200909 200910 200911 200912 201001 201002
+
+
+[Example 5] Filter mode: insert the date and month information of the dif destination
+
+$ cat date_data
+A 20090901 B
+A 20090902 B
+A 20090903 B
+
+$ mdate -f 2/+5 date_data
+A 20090901 20090906 B
+A 20090902 20090907 B
+A 20090903 20090908 B
+
+$ cat month_data
+A 200909 B
+A 200910 B
+A 200911 B
+
+$ mdate -f 2m/+5 month_data
+A 200909 201002 B
+A 200910 201003 B
+A 200911 201004 B
+
+
+[Example 6] Filter mode: insert continuous date, week, and month information up to the dif destination
+
+$ cat date_data
+A 20090901 B
+A 20090902 B
+A 20090903 B
+
+$ mdate -f -e 2/+5 date_data
+A 20090901 20090902 20090903 20090904 20090905 20090906 B
+A 20090902 20090903 20090904 20090905 20090906 20090907 B
+A 20090903 20090904 20090905 20090906 20090907 20090908 B
+
+$ cat month_data
+A 200909 B
+A 200910 B
+A 200911 B
+
+$ mdate -f -e 2m/+5 month_data
+A 200909 200910 200911 200912 201001 201002 B
+A 200910 200911 200912 201001 201002 201003 B
+A 200911 200912 201001 201002 201003 201004 B
+
+
+【Related item】
+
+calclock, dayslash, yobi
+
+last modified: Sun Sep 25 06:49:14 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

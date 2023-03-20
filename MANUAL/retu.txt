@@ -1,0 +1,92 @@
+Tukubai online command manual
+
+retu
+
+【name】
+
+retu : count columns
+
+[Format]
+
+Usage : retu [-f] <file> ...
+Version : Tue Sep 6 08:46:04 JST 2022
+Edition: 1
+
+【explanation】
+
+Counts and outputs the number of columns (number of fields) of text data in the argument file or 
+standard input.
+
+
+【Example 1】
+
+$ cat data
+0000000 Hamachi______ 50 F 91 59 20 76 54
+0000001 Suzuta______ 50 F 46 39 8 5 21
+0000003 Sugiyama______ 26 F 30 50 71 36 30
+0000004 Shirato______ 40 M 58 71 20 10 6
+0000005 Sakimura______ 50 F 82 79 16 21 80
+0000007 Kajikawa______ 42 F 50 2 33 15 62
+
+$ retu data
+9
+
+
+[Example 2]
+
+You can count the number of columns (number of fields) of multiple files at once. 
+If there are rows with different number of columns in the same file, the number of columns 
+is output when the number of columns changes. 
+
+$ cat data1
+1 file1
+2 file1
+3 file1
+
+$ cat data2
+1 file2
+2
+
+$ cat data3
+1
+2 file3
+3
+4 file3
+
+$ retu data1 data2 data3
+2
+2
+1
+1
+2
+1
+2
+
+[Example 3]
+
+Use the -f option to display file names and number of columns respectively.
+
+$ retu -f data1 data2 data3
+data1 2
+data2 2
+data2 1
+data3 1
+data3 2
+data3 1
+data3 2
+
+
+【remarks】
+
+If - is specified for the file name, data is expected to be read from standard input.
+
+$ cat data2 | retu -f data1 - data3
+
+
+【Related item】
+
+count, gyo, juni, rank
+
+last modified: Tue Sep 6 09:02:05 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

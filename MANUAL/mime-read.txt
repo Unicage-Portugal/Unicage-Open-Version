@@ -1,0 +1,42 @@
+Tukubai online command manual
+
+mime read
+
+【name】
+
+mime-read : read MIME format file
+
+[Format]
+
+Usage : mime-read <name> <MIME-file>
+         : mime-read -v <MIME-file>
+Version : Sun Apr 19 23:32:18 JST 2020
+Edition: 1
+
+【Explanation】
+
+Mime-read command extracts the data of the specified part form the
+multipart MIME file <MIME-file>.  If <MIME-file> is omitted or "-"
+is specified for <MIME-file>, the standard input is read.
+
+If <name> is specified, the parts which includes name="<name>" operand
+in the part header is object for extraction.
+
+If -v option is specified, all part headers are printed preceaded by
+part number.
+
+
+【example】
+
+Extract the section named by abc.xls from mime-file.
+
+$ mime-read abc.xls mime-file > abc.xls
+
+
+【Related item】
+
+cgi-name, nameread
+
+last modified: Fri Jul 15 16:45:03 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

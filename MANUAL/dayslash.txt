@@ -1,0 +1,84 @@
+Tukubai online command manual
+
+dayslash
+
+【name】
+
+dayslash : date and time format conversion
+
+[Format]
+
+Usage : dayslash [-r] [--output] <format> <field> [<file>]
+Version : Mon Nov 21 07:17:29 JST 2022
+Edition: 1
+
+【explanation】
+
+If the data format of the specified field <field> in the standard input or input file <file> is
+one of the following three patterns, convert it to the format specified in <format> and output it.
+If it is not one of the following 3 patterns, the input data is output as is. 
+
+<Valid patterns>: 
+yyyymmdd
+     Date (8 digits)
+HHMMSS
+     Hour Minute Second (6 digits)
+yyyymmddHHMMSS
+     Year, month, day, hour, minute, second (14 digits)
+
+The format verifies only the number of digits and does not evaluate the correctness of 
+the year/month/day/hour/second.
+
+If you specify m, d, H, M, S alone in <format>, the leading 0 is deleted.
+
+If option -r is specified, inverse transform is performed. 
+If the data in the specified field <field> of the standard input or input file <file> matches 
+the format specified by <format>, it will be converted to one of the following formats. 
+If they do not match, the input data is output as is.
+
+<Valid formats>: 
+yyyymmdd
+     Date (8 digits)
+HHMMSS
+     Hour Minute Second (6 digits)
+yyyymmddHHMMSS
+     Year, month, day, hour, minute, second (14 digits)
+
+The format verifies only the number of digits and does not evaluate the correctness of 
+the year/month/day/hour/second.
+
+
+【Example 1】
+
+$ echo 20120304 | dayslash yyyy/mm/dd 1
+2012/03/04
+
+$ echo 050607 | dayslash --output H:M:S 1
+5:6:7
+
+$ echo 20111201235958 | dayslash m/d 1
+12/1
+
+$ echo - | dayslash yyyy/mm/dd 1
+-
+
+
+【Example 2】
+
+$ echo 2012/03/04 | dayslash -r yyyy/mm/dd 1
+20120304
+
+$ echo 5:6:7 | dayslash -r H:M:S 1
+050607
+
+$ echo 2011/12/01_23:59:10 | dayslash -r yyyy/m/d_HH:MM:SS 1
+20111201235910
+
+
+【Related item】
+
+calclock, mdate, yobi
+
+last modified: Mon Nov 21 07:19:21 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

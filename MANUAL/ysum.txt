@@ -1,0 +1,79 @@
+Tukubai online command manual
+
+ysum
+
+【name】
+
+ysum : horizontal sum
+
+[Format]
+
+Usage : ysum [+h] [num=<n>] <file>
+Version : Sat Jun 20 21:57:23 JST 2020
+Edition: 1
+
+【explanation】
+
+Append the sum of each field in the same line of the <file> file to the end of the line. 
+Aggregate all fields after the field specified by num=<n> and add it after the last field.
+If num=<n> is omitted, it behaves the same as num=0.
+If - is specified as <file>, standard input is used.
+
+
+【Example 1】
+
+$ cat data 	←Number Name Age Gender Score A B C D E
+0000000 Hamachi______ 50 F 91 59 20 76 54 
+0000001 Suzuta______ 50 F 46 39 8 5 21
+0000003 Sugiyama______ 26 F 30 50 71 36 30
+0000004 Shirato______ 40 M 58 71 20 10 6
+0000005 Sakimura______ 50 F 82 79 16 21 80
+0000007 Kajikawa______ 42 F 50 2 33 15 62
+
+Aggregates the scores for each subject (from the 5th field onwards) and add it after 
+the final field.
+
+$ ysum num=4 data
+0000000 Hamachi______ 50 F 91 59 20 76 54 300
+0000001 Suzuta______ 50 F 46 39 8 5 21 119
+0000003 Sugiyama______ 26 F 30 50 71 36 30 217
+0000004 Shirato______ 40 M 58 71 20 10 6 165
+0000005 Sakimura______ 50 F 82 79 16 21 80 278
+0000007 Kajikawa______ 42 F 50 2 33 15 62 162
+
+
+[Example 2]
+
+If +h option is specified, the rows other than the first row are totaled. 
+The first line is used for header data such as item names. At this time, @ is added to the total 
+value field in the top row.
+
+Execute the following command to skip the first line, 
+add up the scores for each subject (from the 5th field onwards), and add it after the last field.
+
+$ cat data
+No Name Age Gender A B C D E 
+0000000 Hamachi______ 50 F 91 59 20 76 54
+0000001 Suzuta______ 50 F 46 39 8 5 21
+0000003 Sugiyama______ 26 F 30 50 71 36 30
+0000004 Shirato______ 40 M 58 71 20 10 6
+0000005 Sakimura______ 50 F 82 79 16 21 80
+0000007 Kajikawa______ 42 F 50 2 33 15 62
+
+$ ysum +h num=4 data | keta -
+     No          Name Age Gender  A  B  C  D  E   @
+0000000 Hamachi______  50      F 91 59 20 76 54 300
+0000001 Suzuta_______  50      F 46 39  8  5 21 119
+0000003 Sugiyama_____  26      F 30 50 71 36 30 217
+0000004 Shirato______  40      M 58 71 20 10  6 165
+0000005 Sakimura_____  50      F 82 79 16 21 80 278
+0000007 Kajikawa_____  42      F 50  2 33 15 62 162
+
+
+【Related item】
+
+kasan, plus, ratio, sm2, sm4, sm5
+
+last modified: Fri Jul 15 16:29:50 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

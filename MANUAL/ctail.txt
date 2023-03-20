@@ -1,0 +1,64 @@
+Tukubai online command manual
+
+ctail
+
+【name】
+
+ctail : Output the last n lines of the file
+
+[Format]
+
+Usage : ctail -n <file>
+         : ctail n <file>
+         : ctail -<n>c <file>
+Version : Wed May 20 04:47:48 JST 2020
+Edition: 1
+
+【explanation】
+
+Outputs to the standard output from the argument file or the text data of the standard input, 
+excluding the last lines of the number of lines specified by the argument -n (or n).
+
+
+[Example 1] 
+Delete the last 3 lines of the file and display it.
+
+$ cat data
+001 Hokkaido
+002 Tohoku
+003 Kanto
+004 Chubu
+005 Kinki
+006 Chubu
+007 Shikoku
+008 Kyushu
+009 Okinawa
+
+$ ctail -3 data > data2
+
+$ cat data2
+001 Hokkaido
+002 Tohoku
+003 Kanto
+004 Chubu
+005 Kinki
+006 Chubu
+
+
+[Example 2] 
+Delete the last n bytes of the file
+
+$ echo -n abcde | ctail -1c
+abcd
+
+$ echo -n abcde | ctail -2c
+abc
+
+
+【Related item】
+
+getfirst, getlast, tcat, ycat
+
+last modified: Fri Jul 15 16:40:15 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

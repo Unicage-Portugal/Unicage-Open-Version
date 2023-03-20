@@ -1,0 +1,191 @@
+Tukubai online command manual
+
+join1
+
+【name】
+
+join1 : Join master file to transaction file (only matching lines are joined)
+
+[Format]
+
+Usage : join1 [+ng[<fd>]] key=<n> <master> [<tran>]
+Version : Sun Jun 19 23:55:51 JST 2022
+Edition: 1
+
+【explanation】
+
+Only those rows in the text file <tran> where the <key> fields of
+<tran> match corresponding fields of <master> are selected,
+then joined with the fields in <master> and output.  The join occurs
+by adding the fields from <master> immediately after the key field
+in <tran>.
+
+The key fields in <master> and <tran> MUST be sorted in ascending
+order.  Also, the key fields in <master> must only contain unique
+values (the same value cannot be repeated in the key fields).  the
+key fields in <tran> do not have this requirement; multiple records
+in <tran> can have the same value in the key fields.
+
+If - is specified for master, the standard input is used as the master file. 
+If tran is not specified or - is specified, the standard input is the transaction file.
+
+Multiple fields can be specified as keys.
+<key> can be specified as:
+key=3     The third field in the transaction file
+key=3/5   The third, fourth and fifth field in the transaction
+          file (the first, second and third field in the master file)
+key=4@3   The fourth and third field in the transaction file
+          the second and first field in the master file)
+key=NF    Last field in the transaction file (first field in the
+          master file)
+key=NF-3  Third to last field in the transaction file (first field
+          in the master file)
+
+Field positions can be specified in the form NF or NF-x using NF, 
+which means number of fields in a line.
+
+If there is even one 0 in the key specification, it means that all fields are specified.
+
+With the +ng option, output matching lines to the standard output file and non-matching lines 
+to the file with file descriptor <fd>. 
+If <fd> is omitted, output to the standard error output file.
+
+Unaligned keys in tran cannot be processed by join1. 
+In that case, align the tran once and then process it with join1, or use cjoin1 instead.
+
+
+[Example 1] Basic pattern
+
+Extract the data of four people registered in master from the expense file keihi 
+and concatenate the contents of the master file.
+
+$ cat master
+0000003 Sugiyama______ 26 F
+0000005 Sakimura______ 50 F
+0000007 Kajikawa______ 42 F
+0000010 Yanagimoto______ 50 F
+
+$ cat keihi
+20070401 0000001 300
+20070403 0000001 500
+20070404 0000001 700
+20070401 0000003 200
+20070402 0000003 400
+20070405 0000003 600
+20070401 0000005 250
+20070402 0000005 450
+20070402 0000007 210
+20070404 0000007 410
+20070406 0000007 610
+
+Join master using the second field of keihi as a key. 
+Concatenate only lines with keys that exist in master. 
+Rows that do not exist are discarded. keihi can have multiple lines with the same key.
+
+$ join1 key=2 master keihi
+20070401 0000003 Sugiyama______ 26 F 200
+20070402 0000003 Sugiyama______ 26 F 400
+20070405 0000003 Sugiyama______ 26 F 600
+20070401 0000005 Sakimura______ 50 F 250
+20070402 0000005 Sakimura______ 50 F 450
+20070402 0000007 Kajikawa______ 42 F 210
+20070404 0000007 Kajikawa______ 42 F 410
+20070406 0000007 Kajikawa______ 42 F 610
+
+
+[Example 2]
+
+If you want to specify multiple consecutive fields in order from the left as keys, 
+execute as follows.
+Extract only the lines that exist in the master file (arranged in the order of 1st and 2nd fields) 
+using the 2nd and 2nd fields of the kekka file as keys (arranged in the order of 2nd and 3rd fields), 
+the contents of master are concatenated and output.
+
+$ cat master
+A 0000003 Sugiyama______ 26 F
+A 0000005 Sakimura______ 50 F
+B 0000007 Kajikawa______ 42 F
+C 0000010 Yanagimoto______ 50 F
+
+$ cat kekka
+1 A 0000000 91 59 20 76 54
+2 A 0000001 46 39 8 5 21
+3 A 0000003 30 50 71 36 30
+4 A 0000004 58 71 20 10 6
+5 A 0000005 82 79 16 21 80
+6 B 0000007 50 2 33 15 62
+7 B 0000008 52 91 44 9 0
+8 C 0000009 60 89 33 18 6
+9 C 0000010 95 60 35 93 76
+10 C 0000011 92 56 83 96 75
+
+$ join1 key=2/3 master kekka
+3 A 0000003 Sugiyama______ 26 F 30 50 71 36 30
+5 A 0000005 Sakimura______ 50 F 82 79 16 21 80
+6 B 0000007 Kajikawa______ 42 F 50 2 33 15 62
+9 C 0000010 Yanagimoto______ 50 F 95 60 35 93 76
+
+
+It is also possible to specify multiple non-consecutive fields as keys from the left. 
+In this case, specify multiple key fields by connecting them with @. 
+In the following example, tran must be sorted in the order of the 4th and 2nd fields, 
+and master must be sorted in the order of the 3rd and 1st fields.
+
+$ join1 key=4@2 master tran
+
+
+[Example 3] "+ng" option
+
+It is also possible to extract rows that do not match master and key. 
+Lines that match the key are printed to standard output, and lines that do not match 
+are printed to standard error. 
+In this case, matching lines are concatenated with the master file, but non-matching lines 
+do not exist in the master file and are not concatenated and are output as they are.
+
+$ cat master
+0000003 Sugiyama______ 26F
+0000005 Sakimura______ 50 F
+0000007 Kajikawa______ 42 F
+0000010 Yanagimoto______ 50 F
+
+$ cat kekka
+0000000 91 59 20 76 54
+0000001 46 39 8 5 21
+0000003 30 50 71 36 30
+0000004 58 71 20 10 6
+0000005 82 79 16 21 80
+0000007 50 2 33 15 62
+0000008 52 91 44 9 0
+0000009 60 89 33 18 6
+0000010 95 60 35 93 76
+0000011 92 56 83 96 75
+
+
+The data of the four students registered in the master and other data can be extracted 
+from the grade file kekka as follows.
+
+$ join1 +ng key=1 master kekka > ok-data 2> ng-data
+
+$ cat ok-data 	← matched data
+0000003 Sugiyama______ 26 F 30 50 71 36 30
+0000005 Sakimura______ 50 F 82 79 16 21 80
+0000007 Kajikawa______ 42 F 50 2 33 15 62
+0000010 Yanagimoto______ 50 F 95 60 35 93 76
+
+$ cat ng-data 	← unmatched data
+0000000 91 59 20 76 54
+0000001 46 39 8 5 21
+0000004 58 71 20 10 6
+0000008 52 91 44 9 0
+0000009 60 89 33 18 6
+0000011 92 56 83 96 75
+
+
+【Related item】
+
+cjoin0, cjoin1, cjoin2, join0, join2, loopj, loopx, up3
+
+
+last modified: Fri Jul 15 15:42:38 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

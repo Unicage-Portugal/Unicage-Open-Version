@@ -1,0 +1,59 @@
+Tukubai online command manual
+
+count
+
+【name】
+
+count : count the number of lines with the same key
+
+[Format]
+
+Usage : count <k1> <k2> <file>
+Version : Thu Aug 20 03:13:37 JST 2020
+Edition: 1
+
+【explanation】
+
+This tool outputs the number of rows (records) where the key fields
+are the same value as the value specified in the file <file>.  The
+key fields are specified using <k1> as the first field and <k2> as
+the last field.  The the key fields should be sorted.
+
+If <file> is ommitted or specified as "-", the standard input is used.
+
+
+【Example 1】
+
+$ cat data
+01 Saitama Prefecture 01 Saitama City 91 59 20 76 54
+01 Saitama Prefecture 02 Kawagoe City 46 39 8 5 21
+01 Saitama Prefecture 03 Kumagaya City 82 0 23 84 10
+02 Tokyo 04 Shinjuku Ward 30 50 71 36 30
+02 Tokyo 05 Chuo Ward 78 13 44 28 51
+02 Tokyo 06 Minato Ward 58 71 20 10 6
+02 Tokyo 07 Chiyoda Ward 39 22 13 76 08
+02 Tokyo 08 Hachioji City 82 79 16 21 80
+02 Tokyo 09 Tachikawa City 50 2 33 15 62
+03 Chiba Prefecture 10 Chiba City 52 91 44 9 0
+03 Chiba Prefecture 11 Ichikawa City 60 89 33 18 6
+03 Chiba Prefecture 12 Kashiwa City 95 60 35 93 76
+04 Kanagawa Prefecture 13 Yokohama City 92 56 83 96 75
+04 Kanagawa Prefecture 14 Kawasaki City 30 12 32 44 19
+04 Kanagawa Prefecture 15 Atsugi City 48 66 23 71 24
+04 Kanagawa Prefecture 16 Odawara City 45 21 24 39 03
+
+$ count 1 2 data 	← Count and output the number of cities for each prefecture
+01 Saitama Prefecture 3
+02 Tokyo 6
+03 Chiba Prefecture 3
+04 Kanagawa Prefecture 4
+
+
+【Related item】
+
+gyo, juni, rank, retu
+
+
+last modified: Fri Jul 15 16:39:53 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

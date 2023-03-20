@@ -1,0 +1,54 @@
+Tukubai online command manual
+
+fpad
+
+【name】
+
+fpad : field padding
+
+[Format]
+
+Usage : fpad [-t] <s> <n> [<file>]
+Version : Sat Oct 8 17:55:00 JST 2022
+Edition: 1
+
+【explanation】
+
+When each record in the <file> file has less than <n> fields, fill the remaining fields 
+with the string <s>.
+
+If no file <file> is specified or the file name is "-", read from standard input.
+
+With the -t option, when a record exceeds <n> fields, the excess fields are removed. 
+(-t stands for truncate)
+
+
+[Example 1]
+
+$ cat data
+a
+a a
+a a a
+a a a a
+a a a a a
+
+$ fpad _ 4 data
+a _ _ _
+a a _ _
+a a a _
+a a a a
+a a a a a
+
+
+[Example 2]
+
+$fpad -t _ 4 data
+a _ _ _
+a a _ _
+a a a _
+a a a a
+a a a a
+
+last modified: Sat Oct 8 18:00:45 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

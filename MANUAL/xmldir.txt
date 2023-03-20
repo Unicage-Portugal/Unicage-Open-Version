@@ -1,0 +1,123 @@
+Tukubai online command manual
+
+xmldir
+
+【name】
+
+xmldir : Convert from XML file to Field file by specifying XML path
+
+[Format]
+
+Usage : xmldir /<DirTag1>/<DirTag2>/.../<DirTagN> [<xmlfile>]
+Option : -c<n>
+Version : Sun Aug 28 11:35:26 JST 2022
+Edition: 1
+
+【explanation】
+
+"xmldir" command outputs XML path and all subtree with name and
+attribute and value by each end XML tag.
+"-c" option adds data field of index number of designated XML path.
+N hierachial paths means N indexes and when the same tag repeats on
+the same hierachy, index number is incremented.  When parent tag is
+repeated, lower indexes are reset to 1.
+"-c<n>"  options give 0 head filling to index number with <n>digit.
+
+
+[Example 1] Simple example
+
+$ cat xml
+<dir1>
+     <dir2>
+       <day>23/Jul.2022</day>
+       <day>24/Jul.2022</day>
+     </dir2>
+     <dir2>
+       <day>25/Jul.2022</day>
+       <day>26/Jul.2022</day>
+     </dir2>
+</dir1>
+
+$ xmldir /dir1/dir2 xml
+dir1 dir2 day 23/Jul.2022
+dir1 dir2 day 24/Jul.2022
+dir1 dir2 day 25/Jul.2022
+dir1 dir2 day 26/Jul.2022
+
+$ xmldir -c3 /dir1/dir2 xml
+001 001 dir1 dir2 day 23/Jul.2022
+001 001 dir1 dir2 day 24/Jul.2022
+001 002 dir1 dir2 day 25/Jul.2022
+001 002 dir1 dir2 day 26/Jul.2022
+
+[Example 2] Example with blanks in the text
+
+$ cat xml
+<dir1>
+     <dir2>
+       <day>23 Jul 2022</day>
+       <day>24 Jul 2022</day>
+     </dir2>
+     <dir2>
+       <day>25 Jul 2022</day>
+       <day>26 Jul 2022</day>
+     </dir2>
+</dir1>
+
+$ xmldir -s= /dir1/dir2 xml
+dir1 dir2 day 23=Jul=2022
+dir1 dir2 day 24=Jul=2022
+dir1 dir2 day 25=Jul=2022
+dir1 dir2 day 26=Jul=2022
+
+
+[Example 3] Practical example
+
+$ cat xml
+<dir1>
+	<dir2>
+		<attributes>
+			<data>a</data>
+		</attributes>
+	</dir2>
+	<dir2>
+		<attributes>
+			<data>b</data>
+			<data>c</data>
+		</attributes>
+		<attributes>
+			<data>d</data>
+		</attributes>
+	</dir2>
+</dir1>
+<dir1>
+	<dir2>
+		<attributes>
+			<data>e</data>
+		</attributes>
+		<attributes>
+			<data>f</data>
+		</attributes>
+		<attributes>
+			<data>g</data>
+		</attributes>
+	</dir2>
+</dir1>
+
+$ xmldir -c3 /dir1/dir2/attributes xml
+001 001 dir1 dir2 attributes data a
+001 002 dir1 dir2 attributes data b
+001 003 dir1 dir2 attributes data c
+001 004 dir1 dir2 attributes data d
+002 005 dir1 dir2 attributes data e
+002 006 dir1 dir2 attributes data f
+002 007 dir1 dir2 attributes data g
+
+
+【Related item】
+
+rjson
+
+last modified: Sun Aug 28 11:59:56 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

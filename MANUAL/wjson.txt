@@ -1,0 +1,155 @@
+Tukubai online command manual
+
+wjson
+
+【name】
+
+wjson : convert field format file to JSON format
+
+[Format]
+
+Usage : wjson [-p<c>][-m<c>][-s<c>][-n<string>] [<field-file>]
+           --null
+           --true false
+Version : Fri Oct 28 08:01:44 JST 2022
+Edition: 2
+
+【explanation】
+
+Convert the field format file <field-file> to JSON format (RFC8259).
+
+Items in the key part are delimited by "." by default, but if the value is a number, 
+it means the item number of the list, and if it is anything else (character string), 
+it means the key name of the object.
+
+
+【option】
+
+     -p : Change the delimiter of the key part. The default is ".".
+
+     -m : Change the characters to output as single-byte spaces in the key part. 
+          The default is "_".
+
+     -s : Change the character that is output as a single-byte space in the value part. 
+          The default is "_".
+
+     -n : Change the string output as an empty string in the value part. 
+          The default is "_".
+    
+     --null : Change the output of empty strings to null values. in double quotes
+              An unenclosed null is printed.
+
+     --truefalse: output string "true" to true, string "false" to false
+                  change. It is not enclosed in double quotes.
+
+【remarks】
+
+The following characters in the value are escaped.
+
+     Double quotation (") → \"
+
+     Backslash (\) → \\
+
+
+[Example 1]
+
+$ cat fielddata
+1.name Alice_Brown
+1.sku54321
+1.price 199.95
+1.shipTo.name Bob_Brown
+1.shipTo.address 456_Oak_Lane
+1.shipTo.cityPretendville
+1.shipTo.state_
+1.shipTo.zip 98999
+1.billTo.name Alice_Brown
+1.billTo.address 456_Oak_Lane
+1.billTo.city Pretendville
+1.billTo.state HI
+1.billTo.zip 98999
+2.name Donald_Tramp
+2.sku 24680
+2.price 153.32
+2.shipTo.name Kim_Jonil
+2.shipTo.address 123_Hidroask
+2.shipTo.city Pyonyan
+2.shipTo.state NK
+2.shipTo.zip 10012
+2.billTo.name Donald_Tramp
+2.billTo.address 456_Oak_Lane
+2.billTo.city Pretendville
+2.billTo.state HI
+2.billTo.zip 98999
+
+$wjson < fielddata
+[{"name":"Alice Brown","sku":"54321","price":"199.95","shipTo":{"name":"Bob Brown","address":"456 Oak Lane" ,"city":"Pretendville","state":"","zip":"98999"},"billTo":{"name":"Alice Brown","address":"456 Oak Lane"," city":"Pretendville","state":"HI","zip":"98999"}},{"name":"Donald Tramp","sku":"24680","price":"153.32" ,"shipTo":{"name":"Kim Jonil","address":"123 Hidroask","city":"Pyonyan","state":"NK","zip":"10012"}," billTo":{"name":"Donald Tramp","address":"456 Oak Lane","city":"Pretendville","state":"HI","zip":"98999"}}]
+
+
+[Example 2]
+
+$ cat fielddata2
+1.1 a
+1.2 b
+2.1 c
+2.2 d
+
+$ wjson fielddata2
+[["a","b"],["c","d"]]
+
+
+[Example 3]
+
+$ cat fielddata3
+year 2013
+title Turn_It_Down,_Or_Else!
+info.directors.1 Alice_Smith
+info.directors.2 Bob_Jones
+info.release_date 2013-01-18T00:00:00Z
+info.rating 6.2
+info.genres.1 Comedy
+info.genres.2 Drama
+info.image_url http://ia.media-imdb.com/images/N/O9ERWAU7FS797AJ7LU8HN09AMUP908RLlo5JF90EWR7LJKQ7@@._V1_SX400_.jpg
+info.plot A_rock_band_plays_their_music_at_high_volumes,_annoying_the_neighbors.
+info.rank 11
+info.running_time_secs 5215
+info.actors.1 David_Matthewman
+info.actors.2 Ann_Thomas
+info.actors.3 Jonathan_G._Neff
+
+Give the file path to the first argument.
+
+$wjson fielddata3
+{"year":"2013","title":"Turn It Down, Or Else!","info":{"directors":["Alice Smith","Bob Jones"],"release date":" 2013-01-18T00:00:00Z","rating":"6.2","genres":["Comedy","Drama"],"image url":"http://ia.media-imdb.com /images/N/O9ERWAU7FS797AJ7LU8HN09AMUP908RLlo5JF90EWR7LJKQ7@@. V1 SX400 .jpg","plot":"A rock band plays their music at high volumes, annoying the neighbors.","rank":"11","running time secs": "5215","actors":["David Matthewman","Ann Thomas","Jonathan G. Neff"]}}
+
+
+[Example 4]
+
+$ cat fielddata
+data1 null
+data2 _
+data3 _
+data4 true
+data5 false
+data6 0.000000000000000000000000000000000662607
+
+$wjson fielddata
+{"data1":"null","data2":"","data3":"","data4":"true","data5":"false","data6":"0.0000000000000000000000000000000662607"}
+
+If you use the --truefalse option, it will be expressed as a boolean value instead of a string type.
+
+$wjson --null --truefalse fielddata
+{"data1":"null","data2":null,"data3":null,"data4":true,"data5":false,"data6":"0.00000000000000000000000000000000662607"}
+
+Specify a label to replace the empty string after the -n option.
+
+$ wjson -nnull --null --truefalse fielddata
+{"data1":null,"data2":" ","data3":" ","data4":true,"data5":false,"data6":"0.00000000000000000000000000000000662607"}
+
+
+【Related item】
+
+rjson
+
+last modified: Fri Oct 28 08:06:15 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

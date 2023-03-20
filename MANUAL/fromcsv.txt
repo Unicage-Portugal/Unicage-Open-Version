@@ -1,0 +1,53 @@
+Tukubai online command manual
+
+fromcsv
+
+【name】
+
+fromcsv : CSV filter
+
+[Format]
+
+Usage : fromcsv [<file>]
+Option : -n <null_string>
+         -s <space_character>
+         -e
+         -q
+Version : Tue Sep 13 17:11:29 JST 2022
+
+【explanation】
+
+Convert a CSV file to a space delimited file.
+If no file name is specified or '-', standard input is read.
+
+【specification】
+
+  1. Empty strings are converted to 0.
+  2. Convert "" in string to ".
+  3. Single-byte spaces in strings are converted to _.
+     You can change _ to another single-byte character with the -s option.
+  4. The -e option prepends _ (or the character specified with the -s option) \ with a \.
+  5. The -q option converts \" to " and \\ to \.
+  6. \r\n at the end of the line is automatically converted to \n.
+  7. Newlines in string are converted to "\n".
+  8. The last line does not have to be a line break.
+
+【Example 1】
+$ cat data
+,"",3,"a_b","cde
+f\gh","i j","k,""l"
+
+$ fromcsv data
+0 _ 3 a_b cde\nf\gh i_j k,"l
+
+$ fromcsv -e data
+0 _ 3 a\_b cde\nf\\gh i_j k,"l
+
+
+【Related item】
+
+tocsv
+
+last modified: Tue Sep 13 17:13:54 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

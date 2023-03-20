@@ -1,0 +1,96 @@
+Tukubai online command manual
+
+haba
+
+【name】 
+
+haba : display width
+
+[Format]
+
+Usage : haba [-vf] <file1> <file2>...
+Version : Wed May 20 04:47:48 JST 2020
+Edition: 1
+
+【explanation】
+
+With the display width of half-width characters set to 1, the display width of the argument file 
+is displayed. Multiple files can be specified.
+
+The -v option outputs the line number and display width where the display width has changed.
+
+The -f option also outputs the file name. For standard input, the filename is STDIN.
+When used with the -v option, order file name, line number, display width.
+
+
+NOTE:
+Half-width over-line "~" (U+203e) is judged to have a display width of 1 (half-width),
+ - It is displayed in half-width even in text editors, etc.
+ - Depending on the window in which the command is executed, it may be displayed with a 
+  display width of 2 (full-width).
+
+
+[Example 1]
+
+Outputs the display width of the specified file.
+$ cat data
+1234
+Tokyo
+Osaka
+St Petersburg
+
+$ haba data
+4
+5
+5
+13
+
+
+[Example 2]
+$ hava -v data
+1 4 	<--- display width 4 from the 1st line
+2 5 	<--- display width 5 from the 2nd line
+4 13 	<--- display width 8 from the 4th line
+
+
+[Example 3]
+
+$ cat file1
+1234
+
+$ cat file2
+abcdef
+
+$haba -f file1 file2
+file1 4
+file2 6
+
+$ haba -vf file1 file2
+file1 1 4
+file2 1 6
+
+$ cat file1 | haba -f -file2
+STDIN 4
+file2 6
+
+
+【reference】
+
+$ cat data
+1234
+Tokyo
+osaka
+
+$ awk '{print length($0)}' data <-- The number of characters is displayed regardless of half-width or full-width.
+4
+2
+4
+
+$ LANG=C awk '{print length($0)}' data <-- you get the number of bytes.
+4
+6
+12
+
+last modified: Fri Aug 12 12:56:05 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

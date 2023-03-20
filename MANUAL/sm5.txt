@@ -1,0 +1,131 @@
+Tukubai online command manual
+
+sm5
+
+【name】
+
+sm5 : Outputs the grand total
+
+[Format]
+
+Usage : sm5 [+h] <k1> <k2> <s1> <s2> <file>
+Version : Sat Jun 20 21:57:22 JST 2020
+Edition: 1
+
+【explanation】
+
+Adds a grand total line (total value of all lines) to the <input> file. 
+With the field specified by k1 to the field specified by k2 as the key, and the fields from 
+s1 to s2 as the summation fields, insert the row of all totals for each summation field other 
+than the key in the last row. 
+The key field in this line is completed with @.
+
+When processing a file with subtotals and intermediate totals added in sm4, 
+the subtotal and intermediate total lines of @ added in sm4 are ignored and the grand total is 
+calculated.
+
+
+【Example 1】
+
+$ cat data
+01 Saitama_Prefecture 01 Saitama_City 91 59 20 76 54
+01 Saitama_Prefecture 02 Kawagoe_City 46 39 8 5 21
+01 Saitama_Prefecture 03 Kumagaya_City 82 0 23 84 10
+02 Tokyo 04 Shinjuku_Ward 30 50 71 36 30
+02 Tokyo 05 Chuo_Ward 78 13 44 28 51
+02 Tokyo 06 Minato_Ward 58 71 20 10 6
+02 Tokyo 07 Hachioji_City 82 79 16 21 80
+02 Tokyo 08 Tachikawa_City 50 2 33 15 62
+03 Chiba_Prefecture 09 Chiba_City 52 91 44 9 0
+03 Chiba_Prefecture 10 Ichikawa_City 60 89 33 18 6
+03 Chiba_Prefecture 11 Kashiwa_City 95 60 35 93 76
+04 Kanagawa_Prefecture 12 Yokohama_City 92 56 83 96 75
+04 Kanagawa_Prefecture 13 Kawasaki_City 30 12 32 44 19
+04 Kanagawa_Prefecture 14 Atsugi_City 48 66 23 71 24
+
+Outputs grand total.
+
+$ sm5 1 4 5 NF data
+01 Saitama_Prefecture 01 Saitama_City 91 59 20 76 54
+01 Saitama_Prefecture 02 Kawagoe_City 46 39 8 5 21
+01 Saitama_Prefecture 03 Kumagaya_City 82 0 23 84 10
+02 Tokyo 04 Shinjuku_Ward 30 50 71 36 30
+02 Tokyo 05 Chuo_Ward 78 13 44 28 51
+02 Tokyo 06 Minato_Ward 58 71 20 10 6
+02 Tokyo 07 Hachioji_City 82 79 16 21 80
+02 Tokyo 08 Tachikawa_City 50 2 33 15 62
+03 Chiba_Prefecture 09 Chiba_City 52 91 44 9 0
+03 Chiba_Prefecture 10 Ichikawa_City 60 89 33 18 6
+03 Chiba_Prefecture 11 Kashiwa_City 95 60 35 93 76
+04 Kanagawa_Prefecture 12 Yokohama_City 92 56 83 96 75
+04 Kanagawa_Prefecture 13 Kawasaki_City 30 12 32 44 19
+04 Kanagawa_Prefecture 14 Atsugi_City 48 66 23 71 24
+@@ @@@@@@@@@@@@@@@@@@@ @@ @@@@@@@@@@@ 894 687 485 606 514
+
+
+[Example 2]
+
+When processing data with subtotals and intermediate totals added with sm4, it becomes as follows.
+
+$ cat data
+01 Saitama_Prefecture 01 Saitama_City 91 59 20 76 54
+01 Saitama_Prefecture 02 Kawagoe_City 46 39 8 5 21
+01 Saitama_Prefecture 03 Kumagaya_City 82 0 23 84 10
+01 Saitama_Prefecture @@ @@@@@@@@@@@@@@@@ 173 59 43 160 64
+02 Tokyo 04 Shinjuku_Ward 30 50 71 36 30
+02 Tokyo 05 Chuo_Ward 78 13 44 28 51
+02 Tokyo 06 Minato_Ward 58 71 20 10 6
+02 Tokyo 07 Hachioji_City 82 79 16 21 80
+02 Tokyo 08 Tachikawa_City 50 2 33 15 62
+02 Tokyo @@ @@@@@@@@@@@@@@@@ 248 213 151 95 167
+03 Chiba_Prefecture 09 Chiba_City 52 91 44 9 0
+03 Chiba_Prefecture 10 Ichikawa_City 60 89 33 18 6
+03 Chiba_Prefecture 11 Kashiwa_City 95 60 35 93 76
+03 Chiba_Prefecture @@ @@@@@@@@@@@@@@@@ 207 240 112 120 82
+04 Kanagawa_Prefecture 12 Yokohama_City 92 56 83 96 75
+04 Kanagawa_Prefecture 13 Kawasaki_City 30 12 32 44 19
+04 Kanagawa_Prefecture 14 Atsugi_City 48 66 23 71 24
+04 Kanagawa_Prefecture @@ @@@@@@@@@@@@@@@@ 170 134 138 211 118
+
+$ sm5 1 4 5 NF data
+01 Saitama_Prefecture 01 Saitama_City 91 59 20 76 54
+01 Saitama_Prefecture 02 Kawagoe_City 46 39 8 5 21
+01 Saitama_Prefecture 03 Kumagaya_City 82 0 23 84 10
+01 Saitama_Prefecture @@ @@@@@@@@@@@@@@@@ 173 59 43 160 64
+02 Tokyo 04 Shinjuku_Ward 30 50 71 36 30
+02 Tokyo 05 Chuo_Ward 78 13 44 28 51
+02 Tokyo 06 Minato_Ward 58 71 20 10 6
+02 Tokyo 07 Hachioji_City 82 79 16 21 80
+02 Tokyo 08 Tachikawa_City 50 2 33 15 62
+02 Tokyo @@ @@@@@@@@@@@@@@@@ 248 213 151 95 167
+03 Chiba_Prefecture 09 Chiba_City 52 91 44 9 0
+03 Chiba_Prefecture 10 Ichikawa_City 60 89 33 18 6
+03 Chiba_Prefecture 11 Kashiwa_City 95 60 35 93 76
+03 Chiba_Prefecture @@ @@@@@@@@@@@@@@@@ 207 240 112 120 82
+04 Kanagawa_Prefecture 12 Yokohama_City 92 56 83 96 75
+04 Kanagawa_Prefecture 13 Kawasaki_City 30 12 32 44 19
+04 Kanagawa_Prefecture 14 Atsugi_City 48 66 23 71 24
+04 Kanagawa_Prefecture @@ @@@@@@@@@@@@@@@@ 170 134 138 211 118
+@@ @@@@@@@@@@@@@@@@@@@ @@ @@@@@@@@@@@@@@@@ 894 687 485 606 514
+
+
+[Note] How to match sm commands
+
+When describing a form that aggregates data in Unicage, the process of aggregating the same key,
+producing subtotals, intermediate totals, and finally producing grand totals frequently occurs. 
+In such cases, sm2, sm4, and sm5 are often combined in multiple stages as follows.
+
+$ cat data |
+sm2 1 6 7 NF | ←Aggregate with same key
+sm4 1 4 5 6 7 NF | ←subtotal
+sm4 1 2 3 6 7 NF |
+sm5 1 6 7 NF > result ← Output grand total
+
+
+【Related item】
+
+kasan, plus, ratio, sm2, sm4, ysum
+
+last modified: Mon Aug 8 12:27:37 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

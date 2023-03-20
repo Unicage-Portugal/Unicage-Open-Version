@@ -1,0 +1,138 @@
+Tukubai online command manual
+
+keta
+
+【name】
+
+keta : text file alignment
+
+[Format]
+
+Usage : keta n1 n2 .. [<filename>]
+           keta -v [<filename>]
+           keta [--] [<filename>]
+Version : Tue Sep 6 08:46:04 JST 2022
+Edition: 1
+
+【Explanation】
+
+Align the number of digits in each field of text data in the argument file or 
+standard input and output. 
+
+Specify the number of digits for each field for all fields. If the specified number of digits 
+is less than the maximum length of the field, the maximum length is assumed.
+
+If you omit all digit number specifications, the number of digits in each field can 
+be automatically determined and output.
+
+The field is output right-aligned, but if you add - to the number of digits, 
+it will be left-aligned. If you omit all digits and specify -- instead, all fields are left-aligned.
+
+<filename> can be omitted when the number of digits is specified.
+<filename> cannot be omitted when the number of digits is not specified.
+
+When -v or -- is specified, the number of digits cannot be specified and 
+<filename> cannot be omitted.
+
+If - is specified as <filename>, standard input is used.
+Standard input is assumed when <filename> is omitted.
+
+
+【Example 1】
+
+Determines the maximum number of digits for each field in the file specified by 
+the argument and automatically outputs the number of digits.
+
+$ cat data
+01 Saitama_Prefecture 01 Saitama_City 91 59 20 76 54
+01 Saitama_Prefecture 02 Kawagoe_City 46 39 8 5 21
+01 Saitama_Prefecture 03 Kumagaya_City 82 0 23 84 10
+02 Tokyo 04 Shinjuku_Ward 30 50 71 36 30
+02 Tokyo 06 Minato_Ward 58 71 20 10 6
+04 Kanagawa_Prefecture 13 Yokohama_City 92 56 83 96 75
+
+
+$ keta data 	←Right justified
+01  Saitama_Prefecture 01  Saitama_City 91 59 20 76 54
+01  Saitama_Prefecture 02  Kawagoe_City 46 39  8  5 21
+01  Saitama_Prefecture 03 Kumagaya_City 82  0 23 84 10
+02               Tokyo 04 Shinjuku_Ward 30 50 71 36 30
+02               Tokyo 06   Minato_Ward 58 71 20 10  6
+04 Kanagawa_Prefecture 13 Yokohama_City 92 56 83 96 75
+
+$ keta -- data 	←Left aligned
+01 Saitama_Prefecture  01 Saitama_City  91 59 20 76 54
+01 Saitama_Prefecture  02 Kawagoe_City  46 39 8  5  21
+01 Saitama_Prefecture  03 Kumagaya_City 82 0  23 84 10
+02 Tokyo               04 Shinjuku_Ward 30 50 71 36 30
+02 Tokyo               06 Minato_Ward   58 71 20 10 6
+04 Kanagawa_Prefecture 13 Yokohama_City 92 56 83 96 75
+
+
+[Example 2]
+
+Specify the number of digits for each field and output. 
+Specify the number of digits from the first to the last field of each field 
+in the file as an argument.
+
+                 ↓ Number of digits in the second field
+         keta n1 n2 n3 ・・・nNF
+              ↑     ↑
+	      |   Number of digits in 3rd field
+    Number of digits in 1st field 
+
+The number of digits is specified by the number of half-width characters. 
+In the case of uppercase letters, two single-byte characters must be specified. 
+keta 4 is equivalent to 4 characters in half-width and 2 characters in full-width. 
+
+The following command gives the same output as example 1:
+$ keta 2 19 2 13 2 2 2 2 2 data
+
+
+[Example 3]
+
+Normally, the digits are output with right justification, but if you want to output with 
+left justification, you can specify the number of digits with a minus sign. 
+For example, to output the 2nd and 4th fields left justified, execute the command as follows.
+
+$ keta 2 -19 2 -13 2 2 2 2 2 data
+01 Saitama_Prefecture  01 Saitama_City  91 59 20 76 54
+01 Saitama_Prefecture  02 Kawagoe_City  46 39  8  5 21
+01 Saitama_Prefecture  03 Kumagaya_City 82  0 23 84 10
+02 Tokyo               04 Shinjuku_Ward 30 50 71 36 30
+02 Tokyo               06 Minato_Ward   58 71 20 10  6
+04 Kanagawa_Prefecture 13 Yokohama_City 92 56 83 96 75
+
+
+[Example 4]
+
+If the same number of digits is specified for consecutive fields, it can be expressed as 
+<number of digits x number of consecutive fields>. 
+keta 3x4 has the same meaning as keta 3 3 3 3. 
+The number of fields can be specified as NF-xx using NF (the number of fields in one line). 
+
+The following command gives the same output as example 3:
+$ keta 2 -19 2 -13 2x5 data
+
+$ keta 2 -19 2 -13 2xNF-4 data
+
+
+[Example 5]
+
+You can use the -v option to display the maximum number of digits for each field in the file.
+
+$ keta -v data
+2 19 2 13 2 2 2 2 2
+
+The following command gives the same output as example 1.
+
+$ keta $(keta -v data) data
+
+
+【Related item】
+
+comma
+
+last modified: Tue Sep 6 09:02:05 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

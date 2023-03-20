@@ -1,0 +1,99 @@
+Tukubai online command manual
+
+fsed
+
+【name】
+
+fsed : field string replacement
+
+[Format]
+
+Usage : fsed [-e|-i] 's/<org>/<new>/<n>'... <file>
+Version : Sun Feb 21 04:35:05 JST 2021
+Edition: 1
+
+【explanation】
+
+Replaces string <org> with string <new> in field <n> of file <file>. 
+Specifying 'g' for <n> will specify all fields.
+
+The -e option interprets <org> as a regular expression. 
+The -i option makes the regular expression case-insensitive.
+
+Multiple replacement specifications can be specified. In this case, the -e/-i options must be
+specified for each replacement specification that uses regular expressions.
+
+
+[Example 1]
+
+Replace tokyo in the first field with TOKYO and osaka in the third field with OSAKA.
+
+$ cat data1
+tokyo 1234 tokyo 5678
+osaka 1234 osaka 5678
+
+$ fsed 's/tokyo/TOKYO/1' 's/osaka/OSAKA/3' data1
+TOKYO 1234 tokyo 5678
+osaka 1234 OSAKA 5678
+
+
+[Example 2]
+
+Replace tokyo with yokohama in all fields.
+$ fsed 's/tokyo/yokohama/g' data1
+yokohama 1234 yokohama 5678
+osaka 1234 osaka 5678
+
+
+[Example 3]
+
+Use regular expressions.
+$ cat data3
+Tokyo 1234
+tokyo 5678
+Tokyo 7777
+
+$ fsed -e 's/^[Tt]okyo$/Tokyo/1' data3
+Tokyo 1234
+Tokyo 5678
+Tokyo 7777
+
+
+[Example 4]
+
+Use case-insensitive regular expressions.
+$ fsed -i 's/^tokyo$/tokyo/1' data3
+Tokyo 1234
+Tokyo 5678
+Tokyo 7777
+
+
+[Example 5]
+
+Use multiple replacement specifications.
+$ fsed 's/tokyo/Yokohama/1' -i 's/tokyo/Kawasaki/1' data3
+Kawasaki 1234
+Yokohama 5678
+Kawasaki 7777
+
+
+[Example 6]
+
+When the delimiter '/' of replacement specification is to be replaced.
+$ cat data6
+001 /home/MANUAL/TOOL/fsed.txt
+
+When replacing '/' with '-' in data6, the delimiter of replacement specification is '/'
+Use a character other than ',' in this example. This character can be any ASCII character.
+
+$ fsed 's,/,-,2' data6
+001-home-MANUAL-TOOL-fsed.txt
+
+You may leave the delimiter as '/' and prepend '\' to '/' in the pattern.
+
+$ fsed 's/\//-/2' data6
+001-home-MANUAL-TOOL-fsed.txt
+
+last modified: Fri Jul 15 15:42:38 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights

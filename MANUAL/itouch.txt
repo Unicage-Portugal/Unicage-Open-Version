@@ -1,0 +1,98 @@
+Tukubai online command manual
+
+itouch
+
+【name】
+
+itouch : initialize the file
+
+[Format]
+
+Usage : itouch [-<n>] "<string>" <file1> <file2>...
+      : itouch [-<n>] -f <file> <file1> <file2>...
+Version : Thu Aug 20 20:30:32 JST 2015
+Edition: 1
+
+【explanation】
+
+If the specified file is not found or is zero bytes, then its
+contents are initialized with <string> or <file>.
+
+If -<n> is specified as a number, then the file is initialized with
+<n> lines of <string> or <n> times of <file>.
+
+You can specify multiple files.
+
+If the file exists and is larger than zero bytes, the command does
+nothing.
+
+If the file specified is "-" then the command reads standard input
+and will output to standard output.
+
+
+[Example 1]
+
+$ cat file
+cat: file: No such file or directory 	<-- file does not exist or has 0 bytes
+
+$ itouch '000 000 0' file
+$ cat file
+000 000 0 	<-- initialized with specified string
+
+$ itouch 'abc abc 0' file <-- file exists and is not 0 bytes
+$ cat file
+000 000 0
+
+
+
+[Example 2]
+
+$ : > file
+$ itouch -3 '000 000 0' file <-- 3 line initialization
+$ cat file
+000 000 0
+000 000 0
+000 000 0
+
+
+[Example 3]
+
+$ : > file
+$ itouch 'a\nb\nc' file 	<-- '\n' is replaced with a newline
+$ cat file
+a
+b
+c
+
+
+[Example 4]
+
+$ cat file1
+$ cat file1 | itouch '000 0' -> result 	<-- 0 bytes from stdin
+$ cat result
+000 0
+
+$ cat file2
+ABC D
+$ cat file2 | itouch '000 0' -> result 	<-- from stdin with content
+$ cat result
+ABC D
+ABC D
+ 
+
+[Example 5]
+
+$ : > file
+$ echo abc > init 	<-- Prepare file for initialization
+$ itouch -f init file 	<-- Initialize file with initialization file init
+$ cat file
+abc
+
+
+【Related item】
+
+touch
+
+last modified: Sat Aug 13 12:25:02 JST 2022
+Contact us: uecinfo@usp-lab.com
+Copyright (c) 2012-2022 Universal Shell Programming Laboratory All Rights
